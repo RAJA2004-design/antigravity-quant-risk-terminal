@@ -126,18 +126,36 @@ python terminal.py --sector Energy
 python terminal.py --sector Metals
 ```
 
-### 4. Run Automated Unit Tests
+### 4. Live Market Telemetry & Automated Daily Refresh
+To refresh all 78 constituent equities and 8 sectoral benchmarks with end-of-day (EOD) market quotes from the National Stock Exchange of India (NSE):
+```bash
+python update_market_data.py
+```
+This updates `market_data.json` and `sectors_config.json`. The automated daily update is scheduled to run at **23:55 IST** via Windows Task Scheduler (`AntigravQuantMarketUpdate`).
+
+### 5. Run Automated Unit Tests
 ```bash
 python -m unittest test_quant_engine.py -v
 ```
 
-### 5. Launch the Interactive Web Dashboard
-- **Zero-Dependency Mode**: Double-click [`dashboard.html`](file:///d:/Project/antigravity-quant-risk-terminal/dashboard.html) in your browser.
+### 6. Launch the Interactive Web Dashboard
+- **Zero-Dependency Mode**: Double-click [`dashboard.html`](file:///d:/Project/antigravity-quant-risk-terminal/dashboard.html) in any web browser.
 - **Vite React Dev Server**:
   ```bash
   npm install
   npm run dev
   ```
+- **Features in Dashboard**:
+  - Live EOD Telemetry with automatic update timestamp
+  - Real-time stock search and filtering across all 78 constituents
+  - Rich interactive SVG charts in every module:
+    - **Assessment**: Cross-sector macro beta comparison & SSI contagion ranking
+    - **Module 1**: Interactive Risk-Return frontier scatter & 95% VaR vs. CVaR downside exposure
+    - **Module 2**: Volatility persistence bars (with $P=0.95$ threshold) & asymmetric leverage $\gamma$
+    - **Module 3**: Directional "To/From-Others" spillovers & full generalized FEVD heatmap matrix
+    - **Module 4**: Cross-sectional QSS conviction rankings & 4-factor radar chart
+    - **Module 5**: Walk-forward out-of-sample cumulative NAV paths & MVO portfolio weights
+  - One-click **Download Institutional Report (CSV)** for all sectors and stocks.
 
 ---
 

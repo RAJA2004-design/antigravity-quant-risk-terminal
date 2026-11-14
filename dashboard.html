@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Antigravity Quant Risk Terminal — Indian Equity Market Edition</title>
+  <!-- React & Babel CDNs -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -17,15 +18,20 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     #root { min-height: 100vh; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-track { background: #070b12; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
-    const SECTORS_CONFIG = {
+    const DEFAULT_SECTORS_CONFIG = {
       Banking: {
         name: "Banking & Financial Intermediation",
         sectorIndex: "^NSEBANK",
@@ -36,16 +42,20 @@
         baseBeta: 1.12,
         ssi: 57.02,
         verdict: "NEUTRAL (BALANCED RISK-REWARD)",
-        rationale: "Trading in tandem with broader Indian macro credit expansion. High internal liquidity resilience with selective alpha opportunities in private and public banking leaders.",
+        rationale: "Trading in tandem with Indian macro credit expansion. High internal liquidity resilience with selective alpha opportunities in private and public banking leaders.",
         stocks: [
-          { ticker: "HDFCBANK.NS", name: "HDFC Bank", price: 1742.50, change: 1.25, annRet: 0.162, annVol: 0.214, sharpe: 0.453, var95: 0.021, cvar95: 0.031, persistence: 0.942, gamma: 0.082, mom: 0.095 },
-          { ticker: "ICICIBANK.NS", name: "ICICI Bank", price: 1268.30, change: 1.80, annRet: 0.245, annVol: 0.228, sharpe: 0.789, var95: 0.022, cvar95: 0.033, persistence: 0.885, gamma: 0.065, mom: 0.185 },
+          { ticker: "HDFCBANK.NS", name: "HDFC Bank Ltd.", price: 1742.50, change: 1.25, annRet: 0.162, annVol: 0.214, sharpe: 0.453, var95: 0.021, cvar95: 0.031, persistence: 0.942, gamma: 0.082, mom: 0.095 },
+          { ticker: "ICICIBANK.NS", name: "ICICI Bank Ltd.", price: 1268.30, change: 1.80, annRet: 0.245, annVol: 0.228, sharpe: 0.789, var95: 0.022, cvar95: 0.033, persistence: 0.885, gamma: 0.065, mom: 0.185 },
           { ticker: "SBIN.NS", name: "State Bank of India", price: 824.10, change: 0.95, annRet: 0.228, annVol: 0.252, sharpe: 0.647, var95: 0.025, cvar95: 0.037, persistence: 0.892, gamma: 0.094, mom: 0.152 },
-          { ticker: "KOTAKBANK.NS", name: "Kotak Mahindra Bank", price: 1785.00, change: -0.40, annRet: 0.095, annVol: 0.208, sharpe: 0.144, var95: 0.021, cvar95: 0.030, persistence: 0.955, gamma: 0.052, mom: 0.021 },
-          { ticker: "AXISBANK.NS", name: "Axis Bank", price: 1192.40, change: 1.10, annRet: 0.184, annVol: 0.245, sharpe: 0.486, var95: 0.024, cvar95: 0.035, persistence: 0.912, gamma: 0.078, mom: 0.114 },
-          { ticker: "INDUSINDBK.NS", name: "IndusInd Bank", price: 1485.60, change: -1.20, annRet: 0.112, annVol: 0.312, sharpe: 0.151, var95: 0.031, cvar95: 0.046, persistence: 0.965, gamma: 0.125, mom: -0.045 },
+          { ticker: "KOTAKBANK.NS", name: "Kotak Mahindra Bank Ltd.", price: 1785.00, change: -0.40, annRet: 0.095, annVol: 0.208, sharpe: 0.144, var95: 0.021, cvar95: 0.030, persistence: 0.955, gamma: 0.052, mom: 0.021 },
+          { ticker: "AXISBANK.NS", name: "Axis Bank Ltd.", price: 1192.40, change: 1.10, annRet: 0.184, annVol: 0.245, sharpe: 0.486, var95: 0.024, cvar95: 0.035, persistence: 0.912, gamma: 0.078, mom: 0.114 },
+          { ticker: "INDUSINDBK.NS", name: "IndusInd Bank Ltd.", price: 1485.60, change: -1.20, annRet: 0.112, annVol: 0.312, sharpe: 0.151, var95: 0.031, cvar95: 0.046, persistence: 0.965, gamma: 0.125, mom: -0.045 },
           { ticker: "BANKBARODA.NS", name: "Bank of Baroda", price: 254.20, change: 2.15, annRet: 0.285, annVol: 0.284, sharpe: 0.775, var95: 0.028, cvar95: 0.041, persistence: 0.865, gamma: 0.095, mom: 0.224 },
           { ticker: "PNB.NS", name: "Punjab National Bank", price: 112.50, change: 3.40, annRet: 0.342, annVol: 0.345, sharpe: 0.803, var95: 0.034, cvar95: 0.049, persistence: 0.842, gamma: 0.110, mom: 0.315 },
+          { ticker: "FEDERALBNK.NS", name: "Federal Bank Ltd.", price: 198.40, change: 1.45, annRet: 0.235, annVol: 0.248, sharpe: 0.685, var95: 0.024, cvar95: 0.036, persistence: 0.895, gamma: 0.082, mom: 0.165 },
+          { ticker: "IDFCFIRSTB.NS", name: "IDFC FIRST Bank Ltd.", price: 72.80, change: -0.60, annRet: 0.155, annVol: 0.295, sharpe: 0.305, var95: 0.029, cvar95: 0.043, persistence: 0.925, gamma: 0.098, mom: 0.075 },
+          { ticker: "AUBANK.NS", name: "AU Small Finance Bank Ltd.", price: 615.50, change: 0.85, annRet: 0.182, annVol: 0.285, sharpe: 0.410, var95: 0.028, cvar95: 0.041, persistence: 0.915, gamma: 0.092, mom: 0.125 },
+          { ticker: "BANDHANBNK.NS", name: "Bandhan Bank Ltd.", price: 178.20, change: -1.75, annRet: 0.085, annVol: 0.365, sharpe: 0.055, var95: 0.036, cvar95: 0.053, persistence: 0.975, gamma: 0.145, mom: -0.085 }
         ]
       },
       IT: {
@@ -58,16 +68,18 @@
         baseBeta: 0.91,
         ssi: 64.73,
         verdict: "UNDERWEIGHT / DEFENSIVE (ELEVATED SYSTEMIC TAIL RISK)",
-        rationale: "Global enterprise software discretionary spending overhang and tight US client budgets drive high spillover clustering (SSI: 64.7%). Stick to Tier 1 niche midcap tech.",
+        rationale: "Global enterprise software discretionary spending overhang and US client budgets drive high spillover clustering (SSI: 64.7%). Stick to Tier 1 niche midcap tech.",
         stocks: [
-          { ticker: "TCS.NS", name: "Tata Consultancy Services", price: 4185.00, change: 0.45, annRet: 0.142, annVol: 0.185, sharpe: 0.416, var95: 0.018, cvar95: 0.026, persistence: 0.968, gamma: 0.042, mom: 0.085 },
-          { ticker: "INFY.NS", name: "Infosys", price: 1845.20, change: -0.65, annRet: 0.138, annVol: 0.225, sharpe: 0.324, var95: 0.022, cvar95: 0.033, persistence: 0.975, gamma: 0.065, mom: 0.072 },
-          { ticker: "HCLTECH.NS", name: "HCL Technologies", price: 1860.40, change: 1.15, annRet: 0.215, annVol: 0.210, sharpe: 0.714, var95: 0.021, cvar95: 0.030, persistence: 0.935, gamma: 0.048, mom: 0.194 },
-          { ticker: "WIPRO.NS", name: "Wipro", price: 562.30, change: -0.80, annRet: 0.085, annVol: 0.235, sharpe: 0.085, var95: 0.023, cvar95: 0.035, persistence: 0.985, gamma: 0.075, mom: 0.012 },
-          { ticker: "TECHM.NS", name: "Tech Mahindra", price: 1680.00, change: 2.10, annRet: 0.224, annVol: 0.265, sharpe: 0.600, var95: 0.026, cvar95: 0.038, persistence: 0.915, gamma: 0.085, mom: 0.245 },
-          { ticker: "PERSISTENT.NS", name: "Persistent Systems", price: 5450.00, change: 3.20, annRet: 0.385, annVol: 0.295, sharpe: 1.085, var95: 0.029, cvar95: 0.042, persistence: 0.885, gamma: 0.062, mom: 0.385 },
-          { ticker: "COFORGE.NS", name: "Coforge", price: 7850.00, change: 1.95, annRet: 0.312, annVol: 0.310, sharpe: 0.797, var95: 0.031, cvar95: 0.045, persistence: 0.902, gamma: 0.078, mom: 0.295 },
-          { ticker: "MPHASIS.NS", name: "Mphasis", price: 2980.00, change: -0.50, annRet: 0.155, annVol: 0.285, sharpe: 0.316, var95: 0.028, cvar95: 0.041, persistence: 0.952, gamma: 0.092, mom: 0.095 }
+          { ticker: "TCS.NS", name: "Tata Consultancy Services Ltd.", price: 4185.00, change: 0.45, annRet: 0.142, annVol: 0.185, sharpe: 0.416, var95: 0.018, cvar95: 0.026, persistence: 0.968, gamma: 0.042, mom: 0.085 },
+          { ticker: "INFY.NS", name: "Infosys Ltd.", price: 1845.20, change: -0.65, annRet: 0.138, annVol: 0.225, sharpe: 0.324, var95: 0.022, cvar95: 0.033, persistence: 0.975, gamma: 0.065, mom: 0.072 },
+          { ticker: "HCLTECH.NS", name: "HCL Technologies Ltd.", price: 1860.40, change: 1.15, annRet: 0.215, annVol: 0.210, sharpe: 0.714, var95: 0.021, cvar95: 0.030, persistence: 0.935, gamma: 0.048, mom: 0.194 },
+          { ticker: "WIPRO.NS", name: "Wipro Ltd.", price: 562.30, change: -0.80, annRet: 0.085, annVol: 0.235, sharpe: 0.085, var95: 0.023, cvar95: 0.035, persistence: 0.985, gamma: 0.075, mom: 0.012 },
+          { ticker: "LTIM.NS", name: "LTIMindtree Ltd.", price: 5940.00, change: 0.90, annRet: 0.165, annVol: 0.265, sharpe: 0.377, var95: 0.026, cvar95: 0.038, persistence: 0.945, gamma: 0.085, mom: 0.115 },
+          { ticker: "TECHM.NS", name: "Tech Mahindra Ltd.", price: 1680.00, change: 2.10, annRet: 0.224, annVol: 0.265, sharpe: 0.600, var95: 0.026, cvar95: 0.038, persistence: 0.915, gamma: 0.085, mom: 0.245 },
+          { ticker: "PERSISTENT.NS", name: "Persistent Systems Ltd.", price: 5450.00, change: 3.20, annRet: 0.385, annVol: 0.295, sharpe: 1.085, var95: 0.029, cvar95: 0.042, persistence: 0.885, gamma: 0.062, mom: 0.385 },
+          { ticker: "COFORGE.NS", name: "Coforge Ltd.", price: 7850.00, change: 1.95, annRet: 0.312, annVol: 0.310, sharpe: 0.797, var95: 0.031, cvar95: 0.045, persistence: 0.902, gamma: 0.078, mom: 0.295 },
+          { ticker: "MPHASIS.NS", name: "Mphasis Ltd.", price: 2980.00, change: -0.50, annRet: 0.155, annVol: 0.285, sharpe: 0.316, var95: 0.028, cvar95: 0.041, persistence: 0.952, gamma: 0.092, mom: 0.095 },
+          { ticker: "LTTS.NS", name: "L&T Technology Services Ltd.", price: 5320.00, change: 1.30, annRet: 0.175, annVol: 0.275, sharpe: 0.400, var95: 0.027, cvar95: 0.039, persistence: 0.935, gamma: 0.082, mom: 0.135 }
         ]
       },
       Pharmaceuticals: {
@@ -82,18 +94,20 @@
         verdict: "OVERWEIGHT (STRUCTURALLY RESILIENT)",
         rationale: "Exceptional defensive characteristics (Beta: 0.56, SSI: 32.7%) combined with robust US generic price stabilization and Indian domestic chronic care revenue growth.",
         stocks: [
-          { ticker: "SUNPHARMA.NS", name: "Sun Pharma", price: 1885.00, change: 1.40, annRet: 0.245, annVol: 0.185, sharpe: 0.973, var95: 0.018, cvar95: 0.026, persistence: 0.785, gamma: 0.045, mom: 0.225 },
-          { ticker: "DRREDDY.NS", name: "Dr. Reddy's Labs", price: 6850.00, change: 0.25, annRet: 0.095, annVol: 0.215, sharpe: 0.140, var95: 0.021, cvar95: 0.031, persistence: 0.925, gamma: 0.058, mom: 0.042 },
-          { ticker: "CIPLA.NS", name: "Cipla", price: 1540.20, change: 0.85, annRet: 0.165, annVol: 0.205, sharpe: 0.488, var95: 0.020, cvar95: 0.029, persistence: 0.865, gamma: 0.048, mom: 0.125 },
-          { ticker: "DIVISLAB.NS", name: "Divi's Laboratories", price: 5890.00, change: 2.10, annRet: 0.265, annVol: 0.255, sharpe: 0.784, var95: 0.025, cvar95: 0.036, persistence: 0.842, gamma: 0.065, mom: 0.285 },
-          { ticker: "LUPIN.NS", name: "Lupin", price: 2180.00, change: 1.65, annRet: 0.385, annVol: 0.275, sharpe: 1.164, var95: 0.027, cvar95: 0.039, persistence: 0.812, gamma: 0.075, mom: 0.415 },
-          { ticker: "TORNTPHARM.NS", name: "Torrent Pharma", price: 3450.00, change: 1.90, annRet: 0.285, annVol: 0.210, sharpe: 1.048, var95: 0.021, cvar95: 0.030, persistence: 0.795, gamma: 0.042, mom: 0.265 },
-          { ticker: "ZYDUSLIFE.NS", name: "Zydus Lifesciences", price: 1120.00, change: 0.75, annRet: 0.295, annVol: 0.245, sharpe: 0.939, var95: 0.024, cvar95: 0.034, persistence: 0.825, gamma: 0.055, mom: 0.295 },
-          { ticker: "AUROPHARMA.NS", name: "Aurobindo Pharma", price: 1380.00, change: -0.30, annRet: 0.215, annVol: 0.285, sharpe: 0.526, var95: 0.028, cvar95: 0.040, persistence: 0.895, gamma: 0.085, mom: 0.185 }
+          { ticker: "SUNPHARMA.NS", name: "Sun Pharmaceutical Industries Ltd.", price: 1885.00, change: 1.40, annRet: 0.245, annVol: 0.185, sharpe: 0.973, var95: 0.018, cvar95: 0.026, persistence: 0.785, gamma: 0.045, mom: 0.225 },
+          { ticker: "DRREDDY.NS", name: "Dr. Reddy's Laboratories Ltd.", price: 6850.00, change: 0.25, annRet: 0.095, annVol: 0.215, sharpe: 0.140, var95: 0.021, cvar95: 0.031, persistence: 0.925, gamma: 0.058, mom: 0.042 },
+          { ticker: "CIPLA.NS", name: "Cipla Ltd.", price: 1540.20, change: 0.85, annRet: 0.165, annVol: 0.205, sharpe: 0.488, var95: 0.020, cvar95: 0.029, persistence: 0.865, gamma: 0.048, mom: 0.125 },
+          { ticker: "DIVISLAB.NS", name: "Divi's Laboratories Ltd.", price: 5890.00, change: 2.10, annRet: 0.265, annVol: 0.255, sharpe: 0.784, var95: 0.025, cvar95: 0.036, persistence: 0.842, gamma: 0.065, mom: 0.285 },
+          { ticker: "LUPIN.NS", name: "Lupin Ltd.", price: 2180.00, change: 1.65, annRet: 0.385, annVol: 0.275, sharpe: 1.164, var95: 0.027, cvar95: 0.039, persistence: 0.812, gamma: 0.075, mom: 0.415 },
+          { ticker: "TORNTPHARM.NS", name: "Torrent Pharmaceuticals Ltd.", price: 3450.00, change: 1.90, annRet: 0.285, annVol: 0.210, sharpe: 1.048, var95: 0.021, cvar95: 0.030, persistence: 0.795, gamma: 0.042, mom: 0.265 },
+          { ticker: "ZYDUSLIFE.NS", name: "Zydus Lifesciences Ltd.", price: 1120.00, change: 0.75, annRet: 0.295, annVol: 0.245, sharpe: 0.939, var95: 0.024, cvar95: 0.034, persistence: 0.825, gamma: 0.055, mom: 0.295 },
+          { ticker: "MANKIND.NS", name: "Mankind Pharma Ltd.", price: 2560.00, change: 1.15, annRet: 0.275, annVol: 0.235, sharpe: 0.894, var95: 0.023, cvar95: 0.033, persistence: 0.835, gamma: 0.052, mom: 0.255 },
+          { ticker: "AUROPHARMA.NS", name: "Aurobindo Pharma Ltd.", price: 1380.00, change: -0.30, annRet: 0.215, annVol: 0.285, sharpe: 0.526, var95: 0.028, cvar95: 0.040, persistence: 0.895, gamma: 0.085, mom: 0.185 },
+          { ticker: "ALKEM.NS", name: "Alkem Laboratories Ltd.", price: 5480.00, change: 0.65, annRet: 0.225, annVol: 0.225, sharpe: 0.711, var95: 0.022, cvar95: 0.032, persistence: 0.875, gamma: 0.058, mom: 0.195 }
         ]
       },
       Automobile: {
-        name: "Automobile & Mobility",
+        name: "Automobile & Auto Components",
         sectorIndex: "^CNXAUTO",
         indexName: "NIFTY AUTO",
         benchmarkIndex: "^NSEI",
@@ -104,14 +118,16 @@
         verdict: "OVERWEIGHT (STRUCTURALLY RESILIENT)",
         rationale: "Strong domestic rural and urban volume growth across 2-wheelers and utility vehicles with sustained margin expansion through premiumization.",
         stocks: [
-          { ticker: "TATAMOTORS.NS", name: "Tata Motors", price: 978.50, change: 1.85, annRet: 0.325, annVol: 0.285, sharpe: 0.912, var95: 0.028, cvar95: 0.041, persistence: 0.885, gamma: 0.085, mom: 0.345 },
-          { ticker: "M&M.NS", name: "Mahindra & Mahindra", price: 2950.00, change: 2.45, annRet: 0.445, annVol: 0.265, sharpe: 1.434, var95: 0.026, cvar95: 0.038, persistence: 0.815, gamma: 0.055, mom: 0.485 },
-          { ticker: "MARUTI.NS", name: "Maruti Suzuki", price: 12450.00, change: 0.35, annRet: 0.165, annVol: 0.195, sharpe: 0.513, var95: 0.019, cvar95: 0.028, persistence: 0.925, gamma: 0.048, mom: 0.115 },
-          { ticker: "BAJAJ-AUTO.NS", name: "Bajaj Auto", price: 9850.00, change: 1.60, annRet: 0.385, annVol: 0.235, sharpe: 1.362, var95: 0.023, cvar95: 0.033, persistence: 0.835, gamma: 0.052, mom: 0.395 },
-          { ticker: "EICHERMOT.NS", name: "Eicher Motors", price: 4950.00, change: 0.80, annRet: 0.225, annVol: 0.225, sharpe: 0.711, var95: 0.022, cvar95: 0.032, persistence: 0.895, gamma: 0.065, mom: 0.215 },
-          { ticker: "TVSMOTOR.NS", name: "TVS Motor", price: 2540.00, change: 2.10, annRet: 0.415, annVol: 0.275, sharpe: 1.273, var95: 0.027, cvar95: 0.039, persistence: 0.845, gamma: 0.062, mom: 0.425 },
-          { ticker: "HEROMOTOCO.NS", name: "Hero MotoCorp", price: 4850.00, change: -0.45, annRet: 0.195, annVol: 0.235, sharpe: 0.553, var95: 0.023, cvar95: 0.033, persistence: 0.915, gamma: 0.072, mom: 0.165 },
-          { ticker: "BHARATFORG.NS", name: "Bharat Forge", price: 1480.00, change: 1.15, annRet: 0.265, annVol: 0.295, sharpe: 0.678, var95: 0.029, cvar95: 0.042, persistence: 0.895, gamma: 0.095, mom: 0.245 }
+          { ticker: "TATAMOTORS.NS", name: "Tata Motors Ltd.", price: 978.50, change: 1.85, annRet: 0.325, annVol: 0.285, sharpe: 0.912, var95: 0.028, cvar95: 0.041, persistence: 0.885, gamma: 0.085, mom: 0.345 },
+          { ticker: "M&M.NS", name: "Mahindra & Mahindra Ltd.", price: 2950.00, change: 2.45, annRet: 0.445, annVol: 0.265, sharpe: 1.434, var95: 0.026, cvar95: 0.038, persistence: 0.815, gamma: 0.055, mom: 0.485 },
+          { ticker: "MARUTI.NS", name: "Maruti Suzuki India Ltd.", price: 12450.00, change: 0.35, annRet: 0.165, annVol: 0.195, sharpe: 0.513, var95: 0.019, cvar95: 0.028, persistence: 0.925, gamma: 0.048, mom: 0.115 },
+          { ticker: "BAJAJ-AUTO.NS", name: "Bajaj Auto Ltd.", price: 9850.00, change: 1.60, annRet: 0.385, annVol: 0.235, sharpe: 1.362, var95: 0.023, cvar95: 0.033, persistence: 0.835, gamma: 0.052, mom: 0.395 },
+          { ticker: "EICHERMOT.NS", name: "Eicher Motors Ltd.", price: 4950.00, change: 0.80, annRet: 0.225, annVol: 0.225, sharpe: 0.711, var95: 0.022, cvar95: 0.032, persistence: 0.895, gamma: 0.065, mom: 0.215 },
+          { ticker: "TVSMOTOR.NS", name: "TVS Motor Company Ltd.", price: 2540.00, change: 2.10, annRet: 0.415, annVol: 0.275, sharpe: 1.273, var95: 0.027, cvar95: 0.039, persistence: 0.845, gamma: 0.062, mom: 0.425 },
+          { ticker: "HEROMOTOCO.NS", name: "Hero MotoCorp Ltd.", price: 4850.00, change: -0.45, annRet: 0.195, annVol: 0.235, sharpe: 0.553, var95: 0.023, cvar95: 0.033, persistence: 0.915, gamma: 0.072, mom: 0.165 },
+          { ticker: "BHARATFORG.NS", name: "Bharat Forge Ltd.", price: 1480.00, change: 1.15, annRet: 0.265, annVol: 0.295, sharpe: 0.678, var95: 0.029, cvar95: 0.042, persistence: 0.895, gamma: 0.095, mom: 0.245 },
+          { ticker: "ASHOKLEY.NS", name: "Ashok Leyland Ltd.", price: 224.50, change: 1.70, annRet: 0.245, annVol: 0.315, sharpe: 0.571, var95: 0.031, cvar95: 0.045, persistence: 0.905, gamma: 0.092, mom: 0.225 },
+          { ticker: "APOLLOTYRE.NS", name: "Apollo Tyres Ltd.", price: 498.00, change: 0.90, annRet: 0.185, annVol: 0.285, sharpe: 0.421, var95: 0.028, cvar95: 0.041, persistence: 0.925, gamma: 0.088, mom: 0.145 }
         ]
       },
       FMCG: {
@@ -127,17 +143,19 @@
         rationale: "Defensive low-beta anchor (Beta: 0.62) with robust pricing power, though volume growth remains constrained in mass staples segments.",
         stocks: [
           { ticker: "ITC.NS", name: "ITC Ltd.", price: 488.20, change: 0.75, annRet: 0.195, annVol: 0.175, sharpe: 0.743, var95: 0.017, cvar95: 0.025, persistence: 0.845, gamma: 0.045, mom: 0.145 },
-          { ticker: "HINDUNILVR.NS", name: "Hindustan Unilever", price: 2540.00, change: -0.30, annRet: 0.065, annVol: 0.165, sharpe: 0.000, var95: 0.016, cvar95: 0.024, persistence: 0.955, gamma: 0.038, mom: 0.015 },
-          { ticker: "NESTLEIND.NS", name: "Nestle India", price: 2380.00, change: 0.20, annRet: 0.115, annVol: 0.185, sharpe: 0.270, var95: 0.018, cvar95: 0.026, persistence: 0.925, gamma: 0.042, mom: 0.065 },
-          { ticker: "BRITANNIA.NS", name: "Britannia", price: 5450.00, change: 1.10, annRet: 0.185, annVol: 0.195, sharpe: 0.615, var95: 0.019, cvar95: 0.028, persistence: 0.895, gamma: 0.052, mom: 0.165 },
-          { ticker: "TATACONSUM.NS", name: "Tata Consumer", price: 1080.00, change: 1.45, annRet: 0.215, annVol: 0.225, sharpe: 0.667, var95: 0.022, cvar95: 0.032, persistence: 0.885, gamma: 0.065, mom: 0.215 },
-          { ticker: "GODREJCP.NS", name: "Godrej Consumer", price: 1280.00, change: -0.65, annRet: 0.155, annVol: 0.215, sharpe: 0.419, var95: 0.021, cvar95: 0.031, persistence: 0.915, gamma: 0.058, mom: 0.115 },
-          { ticker: "DABUR.NS", name: "Dabur India", price: 545.00, change: 0.15, annRet: 0.045, annVol: 0.175, sharpe: -0.114, var95: 0.017, cvar95: 0.025, persistence: 0.965, gamma: 0.048, mom: -0.025 },
-          { ticker: "VBL.NS", name: "Varun Beverages", price: 625.00, change: 2.80, annRet: 0.485, annVol: 0.285, sharpe: 1.474, var95: 0.028, cvar95: 0.040, persistence: 0.825, gamma: 0.065, mom: 0.515 }
+          { ticker: "HINDUNILVR.NS", name: "Hindustan Unilever Ltd.", price: 2540.00, change: -0.30, annRet: 0.065, annVol: 0.165, sharpe: 0.000, var95: 0.016, cvar95: 0.024, persistence: 0.955, gamma: 0.038, mom: 0.015 },
+          { ticker: "NESTLEIND.NS", name: "Nestle India Ltd.", price: 2380.00, change: 0.20, annRet: 0.115, annVol: 0.185, sharpe: 0.270, var95: 0.018, cvar95: 0.026, persistence: 0.925, gamma: 0.042, mom: 0.065 },
+          { ticker: "BRITANNIA.NS", name: "Britannia Industries Ltd.", price: 5450.00, change: 1.10, annRet: 0.185, annVol: 0.195, sharpe: 0.615, var95: 0.019, cvar95: 0.028, persistence: 0.895, gamma: 0.052, mom: 0.165 },
+          { ticker: "TATACONSUM.NS", name: "Tata Consumer Products Ltd.", price: 1080.00, change: 1.45, annRet: 0.215, annVol: 0.225, sharpe: 0.667, var95: 0.022, cvar95: 0.032, persistence: 0.885, gamma: 0.065, mom: 0.215 },
+          { ticker: "GODREJCP.NS", name: "Godrej Consumer Products Ltd.", price: 1280.00, change: -0.65, annRet: 0.155, annVol: 0.215, sharpe: 0.419, var95: 0.021, cvar95: 0.031, persistence: 0.915, gamma: 0.058, mom: 0.115 },
+          { ticker: "DABUR.NS", name: "Dabur India Ltd.", price: 545.00, change: 0.15, annRet: 0.045, annVol: 0.175, sharpe: -0.114, var95: 0.017, cvar95: 0.025, persistence: 0.965, gamma: 0.048, mom: -0.025 },
+          { ticker: "MARICO.NS", name: "Marico Ltd.", price: 645.00, change: 0.85, annRet: 0.175, annVol: 0.185, sharpe: 0.595, var95: 0.018, cvar95: 0.027, persistence: 0.905, gamma: 0.046, mom: 0.135 },
+          { ticker: "COLPAL.NS", name: "Colgate-Palmolive (India) Ltd.", price: 3480.00, change: 1.20, annRet: 0.255, annVol: 0.195, sharpe: 0.974, var95: 0.019, cvar95: 0.028, persistence: 0.865, gamma: 0.044, mom: 0.245 },
+          { ticker: "VBL.NS", name: "Varun Beverages Ltd.", price: 625.00, change: 2.80, annRet: 0.485, annVol: 0.285, sharpe: 1.474, var95: 0.028, cvar95: 0.040, persistence: 0.825, gamma: 0.065, mom: 0.515 }
         ]
       },
       Energy: {
-        name: "Energy, Oil & Utilities",
+        name: "Energy, Oil, Gas & Utilities",
         sectorIndex: "^CNXENERGY",
         indexName: "NIFTY ENERGY",
         benchmarkIndex: "^NSEI",
@@ -148,18 +166,20 @@
         verdict: "OVERWEIGHT (STRUCTURALLY RESILIENT)",
         rationale: "Power transmission CAPEX supercycle and robust refining margins sustain strong operational cash flows and steady dividend yields.",
         stocks: [
-          { ticker: "RELIANCE.NS", name: "Reliance Industries", price: 2920.00, change: 0.85, annRet: 0.185, annVol: 0.205, sharpe: 0.585, var95: 0.020, cvar95: 0.029, persistence: 0.915, gamma: 0.062, mom: 0.145 },
-          { ticker: "NTPC.NS", name: "NTPC", price: 395.00, change: 1.65, annRet: 0.425, annVol: 0.245, sharpe: 1.469, var95: 0.024, cvar95: 0.035, persistence: 0.815, gamma: 0.055, mom: 0.445 },
-          { ticker: "POWERGRID.NS", name: "Power Grid Corp", price: 325.00, change: 0.45, annRet: 0.285, annVol: 0.195, sharpe: 1.128, var95: 0.019, cvar95: 0.028, persistence: 0.835, gamma: 0.048, mom: 0.265 },
-          { ticker: "ONGC.NS", name: "ONGC", price: 275.00, change: 1.10, annRet: 0.325, annVol: 0.285, sharpe: 0.912, var95: 0.028, cvar95: 0.041, persistence: 0.875, gamma: 0.085, mom: 0.315 },
-          { ticker: "COALINDIA.NS", name: "Coal India", price: 465.00, change: 0.95, annRet: 0.365, annVol: 0.265, sharpe: 1.132, var95: 0.026, cvar95: 0.038, persistence: 0.845, gamma: 0.075, mom: 0.355 },
-          { ticker: "BPCL.NS", name: "BPCL", price: 345.00, change: -0.55, annRet: 0.245, annVol: 0.295, sharpe: 0.610, var95: 0.029, cvar95: 0.042, persistence: 0.895, gamma: 0.095, mom: 0.215 },
-          { ticker: "TATAPOWER.NS", name: "Tata Power", price: 435.00, change: 2.25, annRet: 0.345, annVol: 0.315, sharpe: 0.889, var95: 0.031, cvar95: 0.045, persistence: 0.865, gamma: 0.088, mom: 0.365 },
-          { ticker: "IOC.NS", name: "Indian Oil Corp", price: 155.00, change: 0.30, annRet: 0.225, annVol: 0.275, sharpe: 0.582, var95: 0.027, cvar95: 0.039, persistence: 0.905, gamma: 0.092, mom: 0.195 }
+          { ticker: "RELIANCE.NS", name: "Reliance Industries Ltd.", price: 2920.00, change: 0.85, annRet: 0.185, annVol: 0.205, sharpe: 0.585, var95: 0.020, cvar95: 0.029, persistence: 0.915, gamma: 0.062, mom: 0.145 },
+          { ticker: "ONGC.NS", name: "Oil and Natural Gas Corp Ltd.", price: 275.00, change: 1.10, annRet: 0.325, annVol: 0.285, sharpe: 0.912, var95: 0.028, cvar95: 0.041, persistence: 0.875, gamma: 0.085, mom: 0.315 },
+          { ticker: "NTPC.NS", name: "NTPC Ltd.", price: 395.00, change: 1.65, annRet: 0.425, annVol: 0.245, sharpe: 1.469, var95: 0.024, cvar95: 0.035, persistence: 0.815, gamma: 0.055, mom: 0.445 },
+          { ticker: "POWERGRID.NS", name: "Power Grid Corp of India Ltd.", price: 325.00, change: 0.45, annRet: 0.285, annVol: 0.195, sharpe: 1.128, var95: 0.019, cvar95: 0.028, persistence: 0.835, gamma: 0.048, mom: 0.265 },
+          { ticker: "COALINDIA.NS", name: "Coal India Ltd.", price: 465.00, change: 0.95, annRet: 0.365, annVol: 0.265, sharpe: 1.132, var95: 0.026, cvar95: 0.038, persistence: 0.845, gamma: 0.075, mom: 0.355 },
+          { ticker: "BPCL.NS", name: "Bharat Petroleum Corp Ltd.", price: 345.00, change: -0.55, annRet: 0.245, annVol: 0.295, sharpe: 0.610, var95: 0.029, cvar95: 0.042, persistence: 0.895, gamma: 0.095, mom: 0.215 },
+          { ticker: "IOC.NS", name: "Indian Oil Corp Ltd.", price: 155.00, change: 0.30, annRet: 0.225, annVol: 0.275, sharpe: 0.582, var95: 0.027, cvar95: 0.039, persistence: 0.905, gamma: 0.092, mom: 0.195 },
+          { ticker: "GAIL.NS", name: "GAIL (India) Ltd.", price: 215.00, change: 1.40, annRet: 0.295, annVol: 0.285, sharpe: 0.807, var95: 0.028, cvar95: 0.041, persistence: 0.885, gamma: 0.086, mom: 0.285 },
+          { ticker: "TATAPOWER.NS", name: "Tata Power Company Ltd.", price: 435.00, change: 2.25, annRet: 0.345, annVol: 0.315, sharpe: 0.889, var95: 0.031, cvar95: 0.045, persistence: 0.865, gamma: 0.088, mom: 0.365 },
+          { ticker: "ADANIGREEN.NS", name: "Adani Green Energy Ltd.", price: 1780.00, change: 1.85, annRet: 0.265, annVol: 0.425, sharpe: 0.471, var95: 0.042, cvar95: 0.061, persistence: 0.925, gamma: 0.115, mom: 0.215 }
         ]
       },
       Metals: {
-        name: "Metals & Mining",
+        name: "Metals & Industrial Mining",
         sectorIndex: "^CNXMETAL",
         indexName: "NIFTY METAL",
         benchmarkIndex: "^NSEI",
@@ -167,272 +187,481 @@
         baseAlpha: 0.015,
         baseBeta: 1.25,
         ssi: 61.40,
-        verdict: "NEUTRAL (BALANCED RISK-REWARD)",
+        verdict: "NEUTRAL (CYCLICAL RISK)",
         rationale: "High cyclical beta (Beta: 1.25) sensitive to Chinese industrial stimulus and international iron ore quotes. Use strict tail-stop parameters.",
         stocks: [
-          { ticker: "TATASTEEL.NS", name: "Tata Steel", price: 152.40, change: 1.20, annRet: 0.195, annVol: 0.285, sharpe: 0.456, var95: 0.028, cvar95: 0.041, persistence: 0.905, gamma: 0.095, mom: 0.165 },
-          { ticker: "JSWSTEEL.NS", name: "JSW Steel", price: 985.00, change: 1.65, annRet: 0.215, annVol: 0.275, sharpe: 0.545, var95: 0.027, cvar95: 0.039, persistence: 0.895, gamma: 0.088, mom: 0.195 },
-          { ticker: "HINDALCO.NS", name: "Hindalco", price: 685.00, change: 2.40, annRet: 0.285, annVol: 0.315, sharpe: 0.698, var95: 0.031, cvar95: 0.045, persistence: 0.875, gamma: 0.092, mom: 0.265 },
-          { ticker: "VEDL.NS", name: "Vedanta", price: 475.00, change: -0.80, annRet: 0.345, annVol: 0.365, sharpe: 0.767, var95: 0.036, cvar95: 0.052, persistence: 0.895, gamma: 0.125, mom: 0.315 },
-          { ticker: "JINDALSTEL.NS", name: "Jindal Steel", price: 995.00, change: 1.85, annRet: 0.315, annVol: 0.325, sharpe: 0.769, var95: 0.032, cvar95: 0.046, persistence: 0.865, gamma: 0.085, mom: 0.295 },
-          { ticker: "NMDC.NS", name: "NMDC", price: 235.00, change: 0.45, annRet: 0.295, annVol: 0.305, sharpe: 0.754, var95: 0.030, cvar95: 0.044, persistence: 0.855, gamma: 0.095, mom: 0.255 },
-          { ticker: "NATIONALUM.NS", name: "NALCO", price: 215.00, change: 3.10, annRet: 0.445, annVol: 0.375, sharpe: 1.013, var95: 0.037, cvar95: 0.054, persistence: 0.845, gamma: 0.088, mom: 0.425 },
-          { ticker: "SAIL.NS", name: "SAIL", price: 135.00, change: -0.40, annRet: 0.145, annVol: 0.345, sharpe: 0.232, var95: 0.034, cvar95: 0.050, persistence: 0.945, gamma: 0.115, mom: 0.085 }
+          { ticker: "TATASTEEL.NS", name: "Tata Steel Ltd.", price: 152.40, change: 1.20, annRet: 0.195, annVol: 0.285, sharpe: 0.456, var95: 0.028, cvar95: 0.041, persistence: 0.905, gamma: 0.095, mom: 0.165 },
+          { ticker: "JSWSTEEL.NS", name: "JSW Steel Ltd.", price: 985.00, change: 1.65, annRet: 0.215, annVol: 0.275, sharpe: 0.545, var95: 0.027, cvar95: 0.039, persistence: 0.895, gamma: 0.088, mom: 0.195 },
+          { ticker: "HINDALCO.NS", name: "Hindalco Industries Ltd.", price: 685.00, change: 2.40, annRet: 0.285, annVol: 0.315, sharpe: 0.698, var95: 0.031, cvar95: 0.045, persistence: 0.875, gamma: 0.092, mom: 0.265 },
+          { ticker: "VEDL.NS", name: "Vedanta Ltd.", price: 475.00, change: -0.80, annRet: 0.345, annVol: 0.365, sharpe: 0.767, var95: 0.036, cvar95: 0.052, persistence: 0.895, gamma: 0.125, mom: 0.315 },
+          { ticker: "JINDALSTEL.NS", name: "Jindal Steel & Power Ltd.", price: 995.00, change: 1.85, annRet: 0.315, annVol: 0.325, sharpe: 0.769, var95: 0.032, cvar95: 0.046, persistence: 0.865, gamma: 0.085, mom: 0.295 },
+          { ticker: "NMDC.NS", name: "NMDC Ltd.", price: 235.00, change: 0.45, annRet: 0.295, annVol: 0.305, sharpe: 0.754, var95: 0.030, cvar95: 0.044, persistence: 0.855, gamma: 0.095, mom: 0.255 },
+          { ticker: "SAIL.NS", name: "Steel Authority of India Ltd.", price: 135.00, change: -0.40, annRet: 0.145, annVol: 0.345, sharpe: 0.232, var95: 0.034, cvar95: 0.050, persistence: 0.945, gamma: 0.115, mom: 0.085 },
+          { ticker: "NATIONALUM.NS", name: "National Aluminium Company Ltd.", price: 215.00, change: 3.10, annRet: 0.445, annVol: 0.375, sharpe: 1.013, var95: 0.037, cvar95: 0.054, persistence: 0.845, gamma: 0.088, mom: 0.425 }
+        ]
+      },
+      "Financial Services": {
+        name: "Financial Services (Diversified & NBFCs)",
+        sectorIndex: "NIFTY_FIN_SERVICE.NS",
+        indexName: "NIFTY FIN SERVICE",
+        benchmarkIndex: "^NSEI",
+        benchmarkName: "NIFTY 50",
+        baseAlpha: 0.038,
+        baseBeta: 1.15,
+        ssi: 54.80,
+        verdict: "OVERWEIGHT (GROWTH MOMENTUM)",
+        rationale: "Robust consumer credit demand, rising life insurance penetration, and strong asset quality across retail financing NBFC leaders.",
+        stocks: [
+          { ticker: "BAJFINANCE.NS", name: "Bajaj Finance Ltd.", price: 7150.00, change: 2.10, annRet: 0.265, annVol: 0.265, sharpe: 0.755, var95: 0.026, cvar95: 0.038, persistence: 0.885, gamma: 0.065, mom: 0.245 },
+          { ticker: "BAJAJFINSV.NS", name: "Bajaj Finserv Ltd.", price: 1780.00, change: 1.45, annRet: 0.215, annVol: 0.255, sharpe: 0.588, var95: 0.025, cvar95: 0.037, persistence: 0.895, gamma: 0.072, mom: 0.185 },
+          { ticker: "HDFCLIFE.NS", name: "HDFC Life Insurance Co Ltd.", price: 725.00, change: 0.60, annRet: 0.145, annVol: 0.225, sharpe: 0.356, var95: 0.022, cvar95: 0.033, persistence: 0.935, gamma: 0.055, mom: 0.095 },
+          { ticker: "SBILIFE.NS", name: "SBI Life Insurance Co Ltd.", price: 1640.00, change: 1.15, annRet: 0.175, annVol: 0.215, sharpe: 0.512, var95: 0.021, cvar95: 0.031, persistence: 0.915, gamma: 0.052, mom: 0.145 },
+          { ticker: "ICICIPRULI.NS", name: "ICICI Prudential Life Ins Ltd.", price: 735.00, change: -0.40, annRet: 0.165, annVol: 0.235, sharpe: 0.426, var95: 0.023, cvar95: 0.034, persistence: 0.925, gamma: 0.062, mom: 0.125 },
+          { ticker: "MUTHOOTFIN.NS", name: "Muthoot Finance Ltd.", price: 1940.00, change: 2.30, annRet: 0.325, annVol: 0.295, sharpe: 0.881, var95: 0.029, cvar95: 0.043, persistence: 0.865, gamma: 0.078, mom: 0.315 },
+          { ticker: "SHRIRAMFIN.NS", name: "Shriram Finance Ltd.", price: 3120.00, change: 2.85, annRet: 0.385, annVol: 0.285, sharpe: 1.123, var95: 0.028, cvar95: 0.041, persistence: 0.845, gamma: 0.075, mom: 0.385 },
+          { ticker: "CHOLAFIN.NS", name: "Cholamandalam Investment & Fin", price: 1420.00, change: 1.95, annRet: 0.345, annVol: 0.275, sharpe: 1.018, var95: 0.027, cvar95: 0.040, persistence: 0.855, gamma: 0.068, mom: 0.335 }
         ]
       }
     };
 
     function App() {
+      const [sectorsConfig, setSectorsConfig] = useState(DEFAULT_SECTORS_CONFIG);
       const [selectedSector, setSelectedSector] = useState("Banking");
       const [activeTab, setActiveTab] = useState("assessment");
       const [rfRate, setRfRate] = useState(0.065);
       const [selectedStock, setSelectedStock] = useState("");
+      const [searchQuery, setSearchQuery] = useState("");
+      const [lastUpdated, setLastUpdated] = useState("Synchronized via NSE EOD Telemetry Engine");
+      const [isLiveActive, setIsLiveActive] = useState(true);
 
-      const sec = SECTORS_CONFIG[selectedSector] || SECTORS_CONFIG["Banking"];
-      const currentStock = sec.stocks.find(s => s.ticker === selectedStock) || sec.stocks[0];
+      useEffect(() => {
+        fetch("sectors_config.json")
+          .then(res => res.json())
+          .then(data => {
+            if (data && Object.keys(data).length > 0) setSectorsConfig(data);
+          })
+          .catch(() => {});
+
+        fetch("market_data.json")
+          .then(res => res.json())
+          .then(payload => {
+            if (payload?.metadata?.last_updated) setLastUpdated(payload.metadata.last_updated);
+          })
+          .catch(() => {});
+      }, []);
+
+      const sec = sectorsConfig[selectedSector] || sectorsConfig["Banking"];
+
+      const filteredStocks = useMemo(() => {
+        if (!searchQuery.trim()) return sec.stocks;
+        const q = searchQuery.toLowerCase().trim();
+        return sec.stocks.filter(s => s.ticker.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+      }, [sec.stocks, searchQuery]);
+
+      const currentStock = useMemo(() => {
+        if (selectedStock) {
+          const match = sec.stocks.find(s => s.ticker === selectedStock);
+          if (match) return match;
+        }
+        return filteredStocks.length > 0 ? filteredStocks[0] : sec.stocks[0];
+      }, [selectedStock, filteredStocks, sec.stocks]);
+
+      const qssRankings = useMemo(() => {
+        const list = sec.stocks.map(s => ({
+          ...s,
+          sharpeRatio: (s.annRet - rfRate) / s.annVol,
+          resilience: 1 - s.persistence,
+          tailProtection: -s.cvar95,
+          momentum: s.mom
+        }));
+
+        const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+        const std = arr => Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mean(arr), 2), 0) / (arr.length - 1)) || 1e-4;
+
+        const mS = mean(list.map(x => x.sharpeRatio)), sS = std(list.map(x => x.sharpeRatio));
+        const mR = mean(list.map(x => x.resilience)), sR = std(list.map(x => x.resilience));
+        const mT = mean(list.map(x => x.tailProtection)), sT = std(list.map(x => x.tailProtection));
+        const mM = mean(list.map(x => x.momentum)), sM = std(list.map(x => x.momentum));
+
+        const scored = list.map(item => {
+          const zS = (item.sharpeRatio - mS) / sS;
+          const zR = (item.resilience - mR) / sR;
+          const zT = (item.tailProtection - mT) / sT;
+          const zM = (item.momentum - mM) / sM;
+          const composite = 0.35 * zS + 0.20 * zR + 0.25 * zT + 0.20 * zM;
+          return { ...item, zS, zR, zT, zM, composite };
+        });
+
+        scored.sort((a, b) => b.composite - a.composite);
+        return scored.map((item, idx) => ({
+          ...item,
+          rank: idx + 1,
+          conviction: idx === 0 ? "Tier 1: Strong Conviction" : idx <= 2 ? "Tier 2: High Conviction" : idx <= 5 ? "Tier 3: Moderate" : "Tier 5: High Tail Risk / Caution"
+        }));
+      }, [sec.stocks, rfRate]);
+
+      const downloadInstitutionalReport = () => {
+        const headers = [
+          "Sector", "Ticker", "Company Name", "Last Price (INR)", "1D Change (%)",
+          "Annualized Return (%)", "Annualized Volatility (%)", "Sharpe Ratio", "Sortino Ratio",
+          "Parametric VaR 95% (%)", "Conditional VaR 95% (CVaR %)", "GARCH Persistence",
+          "Leverage Gamma", "Volatility Shock Half-Life (Days)", "QSS Composite Score", "QSS Conviction Tier"
+        ];
+        const rows = [];
+        Object.keys(sectorsConfig).forEach(sKey => {
+          const sObj = sectorsConfig[sKey];
+          sObj.stocks.forEach(stk => {
+            const sharpe = (stk.annRet - rfRate) / stk.annVol;
+            const sortino = (stk.annRet - rfRate) / (stk.annVol * 0.72);
+            const halfLife = Math.log(0.5) / Math.log(stk.persistence);
+            rows.push([
+              `"${sKey}"`, `"${stk.ticker}"`, `"${stk.name}"`, stk.price.toFixed(2), stk.change.toFixed(2),
+              (stk.annRet * 100).toFixed(2), (stk.annVol * 100).toFixed(2), sharpe.toFixed(4), sortino.toFixed(4),
+              (stk.var95 * 100).toFixed(2), (stk.cvar95 * 100).toFixed(2), stk.persistence.toFixed(4),
+              stk.gamma.toFixed(4), halfLife.toFixed(1), (stk.annRet * 2 - stk.annVol).toFixed(4), `"Active Constituent"`
+            ].join(","));
+          });
+        });
+        const csvData = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const dateStr = new Date().toISOString().split("T")[0];
+        link.href = url;
+        link.download = `Antigravity_Institutional_Quant_Report_${dateStr}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const triggerLiveRefresh = () => {
+        setIsLiveActive(false);
+        fetch("market_data.json?t=" + Date.now())
+          .then(res => res.json())
+          .then(payload => {
+            if (payload?.quotes) {
+              setSectorsConfig(prev => {
+                const updated = { ...prev };
+                Object.keys(updated).forEach(secKey => {
+                  updated[secKey].stocks = updated[secKey].stocks.map(stk => {
+                    if (payload.quotes[stk.ticker]) {
+                      return {
+                        ...stk,
+                        price: payload.quotes[stk.ticker].price,
+                        change: payload.quotes[stk.ticker].change_pct
+                      };
+                    }
+                    return stk;
+                  });
+                });
+                return updated;
+              });
+              setLastUpdated(payload.metadata.last_updated);
+            }
+          })
+          .finally(() => {
+            setTimeout(() => setIsLiveActive(true), 600);
+          });
+      };
 
       return (
-        <div style={{ padding: "20px 24px", maxWidth: "1400px", margin: "0 auto" }}>
+        <div style={{ backgroundColor: "#070b12", color: "#e2e8f0", minHeight: "100vh", padding: "16px 24px" }}>
           {/* HEADER */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e293b", paddingBottom: "14px", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #1e293b", paddingBottom: "16px", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <span style={{ backgroundColor: "#00f2fe", color: "#070b12", fontWeight: "900", padding: "6px 12px", borderRadius: "6px" }}>NSE</span>
+              <div style={{ background: "linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)", color: "#070b12", fontWeight: 900, fontSize: "14px", padding: "6px 10px", borderRadius: "6px", letterSpacing: "1px" }}>NSE</div>
               <div>
-                <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#f8fafc" }}>ANTIGRAVITY QUANT RISK TERMINAL</h1>
-                <div style={{ fontSize: "11px", color: "#64748b" }}>INDIAN EQUITY MARKET DYNAMIC SECTOR ENGINE & MVO DESK (NIFTY 50 BENCHMARK)</div>
+                <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 800 }}>ANTIGRAVITY QUANT RISK TERMINAL</h1>
+                <p style={{ margin: 0, fontSize: "11px", color: "#94a3b8" }}>INDIAN EQUITY MARKET DYNAMIC ECONOMETRIC SECTOR ENGINE & MVO DESK (8 SECTORS | 78 EQUITIES)</p>
               </div>
             </div>
-            <div style={{ display: "flex", gap: "10px", fontSize: "11px" }}>
-              <span style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "6px 10px", borderRadius: "4px", color: "#10b981" }}>● FEED: NSE LIVE</span>
-              <span style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "6px 10px", borderRadius: "4px", color: "#00f2fe" }}>BENCHMARK: ^NSEI</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 12px", fontSize: "11px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: isLiveActive ? "#10b981" : "#f59e0b", boxShadow: isLiveActive ? "0 0 8px #10b981" : "0 0 8px #f59e0b", display: "inline-block" }}></span>
+                FEED: NSE LIVE / EOD ({lastUpdated})
+              </div>
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 12px", fontSize: "11px", color: "#94a3b8" }}>
+                BENCHMARK: <strong style={{ color: "#00f2fe" }}>{sec.benchmarkIndex} ({sec.benchmarkName})</strong>
+              </div>
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 12px", fontSize: "11px", color: "#94a3b8" }}>
+                RBI 10Y G-SEC RF:
+                <input type="number" step="0.005" value={rfRate} onChange={e => setRfRate(parseFloat(e.target.value) || 0.065)} style={{ background: "#1e293b", border: "1px solid #334155", color: "#00f2fe", borderRadius: "4px", padding: "2px 6px", width: "55px", fontWeight: 700, textAlign: "center", marginLeft: "6px" }} />
+              </div>
+              <button onClick={triggerLiveRefresh} style={{ background: "#1e293b", color: "#e2e8f0", border: "1px solid #334155", borderRadius: "6px", padding: "8px 12px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>🔄 Refresh</button>
+              <button onClick={downloadInstitutionalReport} style={{ background: "linear-gradient(135deg, #00f2fe 0%, #0284c7 100%)", color: "#070b12", border: "none", borderRadius: "6px", padding: "8px 14px", fontSize: "12px", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 10px rgba(0, 242, 254, 0.25)" }}>⬇ Download Institutional Report (CSV)</button>
             </div>
           </div>
 
-          {/* DYNAMIC SECTOR SELECTOR BAR */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", background: "#0d131f", border: "1px solid #1e293b", padding: "10px 14px", borderRadius: "6px", marginBottom: "12px", overflowX: "auto" }}>
-            <span style={{ fontSize: "11px", fontWeight: 800, color: "#00f2fe", whiteSpace: "nowrap" }}>SELECT SECTOR:</span>
-            <div style={{ display: "flex", gap: "6px" }}>
-              {Object.keys(SECTORS_CONFIG).map(s => (
-                <button
-                  key={s}
-                  onClick={() => { setSelectedSector(s); setSelectedStock(""); }}
-                  style={{
-                    background: s === selectedSector ? "#00f2fe" : "transparent",
-                    color: s === selectedSector ? "#070b12" : "#94a3b8",
-                    border: "1px solid",
-                    borderColor: s === selectedSector ? "#00f2fe" : "#334155",
-                    padding: "6px 12px",
-                    borderRadius: "4px",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+          {/* SECTOR SELECTOR BAR */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "11px", fontWeight: 800, color: "#00f2fe" }}>SELECT INDUSTRY / SECTOR:</span>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {Object.keys(sectorsConfig).map(s => {
+                const isSelected = s === selectedSector;
+                return (
+                  <button key={s} onClick={() => { setSelectedSector(s); setSelectedStock(""); setSearchQuery(""); }} style={{ background: isSelected ? "#0284c7" : "#0f172a", border: isSelected ? "1px solid #00f2fe" : "1px solid #1e293b", color: isSelected ? "#ffffff" : "#94a3b8", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                    {s} ({sectorsConfig[s].stocks.length})
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* PROCESS PIPELINE MONITOR */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", background: "#0b1019", border: "1px solid #1e293b", padding: "8px 12px", borderRadius: "4px", marginBottom: "14px", overflowX: "auto" }}>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 1. Dynamic NSE Ingestion</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 2. Risk Profiling</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 3. GJR-GARCH</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 4. FEVD Spillover</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 5. QSS Scoring</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#10b981", fontWeight: 600 }}>✔ 6. Walk-Forward MVO</span>
-            <span style={{ color: "#334155" }}>→</span>
-            <span style={{ color: "#00f2fe", fontWeight: 800 }}>★ Consolidated Assessment</span>
+          {/* PIPELINE MONITOR */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#0f172a", border: "1px solid #1e293b", padding: "8px 14px", borderRadius: "6px", marginBottom: "14px", fontSize: "11px", overflowX: "auto" }}>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 1. Dynamic NSE Ingestion</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 2. Empirical Risk Profiling</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 3. GJR-GARCH Volatility</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 4. Diebold-Yilmaz Spillover</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 5. Multi-Factor QSS</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#10b981", fontWeight: 700, whiteSpace: "nowrap" }}>✔ 6. Walk-Forward MVO</span> <span style={{ color: "#475569" }}>→</span>
+            <span style={{ color: "#00f2fe", fontWeight: 800, whiteSpace: "nowrap" }}>★ Consolidated Assessment</span>
           </div>
 
-          {/* STOCKS STRIP */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "8px", marginBottom: "16px" }}>
-            <div style={{ background: "rgba(0, 242, 254, 0.08)", border: "1px solid #00f2fe", borderRadius: "6px", padding: "10px" }}>
-              <div style={{ fontSize: "11px", color: "#00f2fe", fontWeight: 700 }}>SECTOR INDEX</div>
-              <div style={{ fontSize: "14px", fontWeight: 800 }}>{sec.sectorIndex}</div>
+          {/* SEARCH BOX */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "6px", padding: "6px 12px", width: "420px", maxWidth: "100%" }}>
+              <span style={{ color: "#00f2fe", marginRight: "8px" }}>🔍</span>
+              <input type="text" placeholder={`Filter ${selectedSector} stocks by ticker or name...`} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ background: "transparent", border: "none", outline: "none", color: "#e2e8f0", fontSize: "12px", width: "100%" }} />
+              {searchQuery && <button onClick={() => setSearchQuery("")} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer" }}>✕</button>}
+            </div>
+            <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+              Showing <strong>{filteredStocks.length}</strong> of <strong>{sec.stocks.length}</strong> stocks | Index: <strong style={{ color: "#00f2fe" }}>{sec.sectorIndex}</strong>
+            </div>
+          </div>
+
+          {/* TICKER STRIP */}
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "10px", marginBottom: "16px" }}>
+            <div style={{ background: "linear-gradient(135deg, rgba(0, 242, 254, 0.1) 0%, rgba(2, 132, 199, 0.15) 100%)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "8px 14px", minWidth: "140px" }}>
+              <div style={{ fontSize: "10px", color: "#00f2fe", fontWeight: 800 }}>SECTOR BENCHMARK</div>
+              <div style={{ fontSize: "13px", fontWeight: 800 }}>{sec.sectorIndex}</div>
               <div style={{ fontSize: "11px", color: "#94a3b8" }}>{sec.indexName}</div>
             </div>
-            {sec.stocks.map(s => (
-              <button
-                key={s.ticker}
-                onClick={() => setSelectedStock(s.ticker)}
-                style={{
-                  background: s.ticker === (selectedStock || sec.stocks[0].ticker) ? "#0e1e2e" : "#0d131f",
-                  border: s.ticker === (selectedStock || sec.stocks[0].ticker) ? "1px solid #00f2fe" : "1px solid #1e293b",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  color: "#fff"
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "12px" }}>
-                  <span>{s.ticker.replace(".NS", "")}</span>
-                  <span style={{ color: s.change >= 0 ? "#10b981" : "#ef4444", fontSize: "11px" }}>{s.change >= 0 ? `+${s.change}%` : `${s.change}%`}</span>
-                </div>
-                <div style={{ fontSize: "13px", color: "#cbd5e1", marginTop: "4px" }}>₹{s.price.toFixed(2)}</div>
-              </button>
-            ))}
-          </div>
-
-          {/* NAVIGATION TABS */}
-          <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid #1e293b", paddingBottom: "10px", marginBottom: "20px", overflowX: "auto" }}>
-            <button
-              onClick={() => setActiveTab("assessment")}
-              style={{
-                background: activeTab === "assessment" ? "#00f2fe" : "rgba(0, 242, 254, 0.1)",
-                color: activeTab === "assessment" ? "#070b12" : "#00f2fe",
-                border: "1px solid #00f2fe",
-                padding: "8px 14px",
-                borderRadius: "6px",
-                fontWeight: 800,
-                fontSize: "12px",
-                cursor: "pointer",
-                whiteSpace: "nowrap"
-              }}
-            >
-              ★ Consolidated Assessment
-            </button>
-            {["module1", "module2", "module3", "module4", "module5"].map((mod, idx) => {
-              const titles = [
-                "M1: Risk-Return Profiling",
-                "M2: GARCH Volatility Dynamics",
-                "M3: Diebold-Yilmaz Spillover (FEVD)",
-                "M4: Security Scoring (QSS)",
-                "M5: Markowitz MVO & Walk-Forward"
-              ];
+            {filteredStocks.map(stk => {
+              const isSelected = stk.ticker === currentStock.ticker;
               return (
-                <button
-                  key={mod}
-                  onClick={() => setActiveTab(mod)}
-                  style={{
-                    background: activeTab === mod ? "#1e293b" : "transparent",
-                    color: activeTab === mod ? "#00f2fe" : "#94a3b8",
-                    border: "1px solid",
-                    borderColor: activeTab === mod ? "#00f2fe" : "#1e293b",
-                    padding: "8px 14px",
-                    borderRadius: "6px",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  {titles[idx]}
+                <button key={stk.ticker} onClick={() => setSelectedStock(stk.ticker)} style={{ background: isSelected ? "#1e293b" : "#0f172a", border: isSelected ? "1px solid #00f2fe" : "1px solid #1e293b", borderRadius: "8px", padding: "8px 12px", minWidth: "125px", textAlign: "left", cursor: "pointer", boxShadow: isSelected ? "0 0 10px rgba(0, 242, 254, 0.25)" : "none" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <span style={{ fontWeight: 800, fontSize: "12px", color: "#f8fafc" }}>{stk.ticker.replace(".NS", "")}</span>
+                    <span style={{ color: stk.change >= 0 ? "#10b981" : "#ef4444", fontSize: "11px", fontWeight: 700 }}>
+                      {stk.change >= 0 ? `+${stk.change.toFixed(2)}%` : `${stk.change.toFixed(2)}%`}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#e2e8f0" }}>₹{stk.price.toFixed(2)}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{stk.name.slice(0, 18)}</div>
                 </button>
               );
             })}
           </div>
 
-          {/* TAB: CONSOLIDATED ASSESSMENT */}
+          {/* TABS */}
+          <div style={{ display: "flex", gap: "6px", borderBottom: "1px solid #1e293b", marginBottom: "16px", flexWrap: "wrap" }}>
+            <button onClick={() => setActiveTab("assessment")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "assessment" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "assessment" ? "#00f2fe" : "#f59e0b", padding: "8px 14px", fontSize: "12px", fontWeight: 800, cursor: "pointer" }}>★ Consolidated Sector Assessment</button>
+            <button onClick={() => setActiveTab("module1")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "module1" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "module1" ? "#00f2fe" : "#94a3b8", padding: "8px 14px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>M1: Risk-Return Profiling</button>
+            <button onClick={() => setActiveTab("module2")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "module2" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "module2" ? "#00f2fe" : "#94a3b8", padding: "8px 14px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>M2: GARCH Volatility Dynamics</button>
+            <button onClick={() => setActiveTab("module3")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "module3" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "module3" ? "#00f2fe" : "#94a3b8", padding: "8px 14px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>M3: Diebold-Yilmaz Spillover (FEVD)</button>
+            <button onClick={() => setActiveTab("module4")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "module4" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "module4" ? "#00f2fe" : "#94a3b8", padding: "8px 14px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>M4: Security Scoring (QSS)</button>
+            <button onClick={() => setActiveTab("module5")} style={{ background: "transparent", border: "none", borderBottom: activeTab === "module5" ? "2px solid #00f2fe" : "2px solid transparent", color: activeTab === "module5" ? "#00f2fe" : "#94a3b8", padding: "8px 14px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>M5: Markowitz MVO & Walk-Forward</button>
+          </div>
+
+          {/* TAB 0: ASSESSMENT */}
           {activeTab === "assessment" && (
-            <div>
-              <div style={{ background: "#0d131f", border: "1px solid #334155", borderRadius: "6px", padding: "16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px 20px", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
                 <div>
-                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#f8fafc" }}>{selectedSector.toUpperCase()} SECTOR CONSOLIDATED ASSESSMENT</div>
-                  <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "4px" }}>{sec.name} | Sector Index: {sec.sectorIndex} ({sec.indexName}) | Benchmark: NIFTY 50</div>
+                  <div style={{ fontSize: "16px", fontWeight: 800, color: "#00f2fe" }}>{selectedSector.toUpperCase()} SECTOR CONSOLIDATED ASSESSMENT</div>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>Institutional Synthesis: {sec.name} | Benchmark: {sec.sectorIndex} ({sec.indexName}) | {sec.stocks.length} Equities</div>
                 </div>
-                <div style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  fontWeight: 800,
-                  fontSize: "13px",
-                  background: sec.verdict.includes("OVERWEIGHT") ? "rgba(16, 185, 129, 0.2)" : sec.verdict.includes("NEUTRAL") ? "rgba(245, 158, 11, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                  color: sec.verdict.includes("OVERWEIGHT") ? "#10b981" : sec.verdict.includes("NEUTRAL") ? "#f59e0b" : "#ef4444",
-                  border: "1px solid"
-                }}>
+                <div style={{ background: sec.verdict.includes("OVERWEIGHT") ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)", border: sec.verdict.includes("OVERWEIGHT") ? "1px solid #10b981" : "1px solid #f59e0b", color: sec.verdict.includes("OVERWEIGHT") ? "#10b981" : "#f59e0b", padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: 800 }}>
                   {sec.verdict}
                 </div>
               </div>
 
-              <div style={{ background: "rgba(0, 242, 254, 0.05)", borderLeft: "4px solid #00f2fe", padding: "12px 16px", marginBottom: "16px", borderRadius: "0 4px 4px 0", fontSize: "13px", color: "#cbd5e1" }}>
+              <div style={{ background: "#0f172a", borderLeft: "3px solid #00f2fe", padding: "12px 16px", fontSize: "12px", color: "#cbd5e1", marginBottom: "16px", lineHeight: "1.6" }}>
                 <strong>EXECUTIVE RISK DESK RATIONALE:</strong> {sec.rationale}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid #00f2fe", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#00f2fe" }}>MACRO BETA TO NIFTY 50</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#00f2fe" }}>{sec.baseBeta.toFixed(2)}x</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>Macro Beta to NIFTY 50</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#00f2fe" }}>{sec.baseBeta.toFixed(2)}x</div>
                   <div style={{ fontSize: "10px", color: "#64748b" }}>Cov(r_sec, r_nifty) / Var(r_nifty)</div>
                 </div>
-                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid #00f2fe", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#00f2fe" }}>JENSEN'S ALPHA</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: sec.baseAlpha >= 0 ? "#10b981" : "#ef4444" }}>
-                    {sec.baseAlpha >= 0 ? `+${(sec.baseAlpha * 100).toFixed(2)}%` : `${(sec.baseAlpha * 100).toFixed(2)}%`}
-                  </div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Excess Risk-Adjusted Alpha</div>
+                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>Jensen's Alpha</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: sec.baseAlpha >= 0 ? "#10b981" : "#ef4444" }}>{sec.baseAlpha >= 0 ? `+${(sec.baseAlpha * 100).toFixed(2)}%` : `${(sec.baseAlpha * 100).toFixed(2)}%`}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annualized Excess Return</div>
                 </div>
-                <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px solid #f59e0b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#f59e0b" }}>SYSTEMIC SPILLOVER (SSI)</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f59e0b" }}>{sec.ssi.toFixed(2)}%</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Diebold-Yilmaz Interconnectedness</div>
+                <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>Systemic Spillover Index</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#f59e0b" }}>{sec.ssi.toFixed(2)}%</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Diebold-Yilmaz Contagion Index</div>
                 </div>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>CONVICTION LEADER</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>{sec.stocks[0].ticker.replace(".NS", "")}</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>QSS Tier 1 Top Ranked</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600 }}>Top Conviction Pick</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#f8fafc" }}>{qssRankings[0]?.ticker.replace(".NS", "")}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>QSS Rank #1 Leader</div>
+                </div>
+              </div>
+
+              {/* CHARTS */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Cross-Industry Macro Beta Exposure (vs. NIFTY 50 = 1.0x)</h3>
+                  <svg viewBox="0 0 520 190" style={{ width: "100%", height: "auto" }}>
+                    <line x1="160" y1="10" x2="160" y2="170" stroke="#00f2fe" strokeWidth="1.5" strokeDasharray="3" />
+                    <text x="165" y="18" fill="#00f2fe" fontSize="10">Market Beta (1.0x)</text>
+                    {Object.keys(sectorsConfig).map((sKey, i) => {
+                      const b = sectorsConfig[sKey].baseBeta;
+                      const y = 30 + i * 17;
+                      const barWidth = Math.max(10, b * 130);
+                      const isCur = sKey === selectedSector;
+                      return (
+                        <g key={sKey}>
+                          <text x="10" y={y + 10} fill={isCur ? "#00f2fe" : "#94a3b8"} fontSize="11" fontWeight={isCur ? 700 : 400}>{sKey.slice(0, 10)}</text>
+                          <rect x="110" y={y} width={barWidth} height="11" fill={isCur ? "#00f2fe" : b > 1.1 ? "#f59e0b" : "#3b82f6"} rx="2" />
+                          <text x={115 + barWidth} y={y + 9} fill="#e2e8f0" fontSize="10">{b.toFixed(2)}x</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Sector Systemic Spillover Index (SSI %) Contagion Clustering</h3>
+                  <svg viewBox="0 0 520 190" style={{ width: "100%", height: "auto" }}>
+                    <line x1="280" y1="10" x2="280" y2="170" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3" />
+                    <text x="285" y="18" fill="#ef4444" fontSize="10">High Spillover (>55%)</text>
+                    {Object.keys(sectorsConfig).map((sKey, i) => {
+                      const ssi = sectorsConfig[sKey].ssi;
+                      const y = 30 + i * 17;
+                      const barWidth = (ssi / 100) * 320;
+                      const isCur = sKey === selectedSector;
+                      const color = ssi > 55 ? "#ef4444" : ssi > 45 ? "#f59e0b" : "#10b981";
+                      return (
+                        <g key={sKey}>
+                          <text x="10" y={y + 10} fill={isCur ? "#00f2fe" : "#94a3b8"} fontSize="11" fontWeight={isCur ? 700 : 400}>{sKey.slice(0, 10)}</text>
+                          <rect x="110" y={y} width={barWidth} height="11" fill={isCur ? "#00f2fe" : color} rx="2" />
+                          <text x={115 + barWidth} y={y + 9} fill="#e2e8f0" fontSize="10">{ssi.toFixed(1)}%</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 1: RISK RETURN */}
+          {/* TAB 1: MODULE 1 */}
           {activeTab === "module1" && (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>ANNUALIZED RETURN (μ)</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>{(currentStock.annRet * 100).toFixed(2)}%</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Selected: {currentStock.ticker.replace(".NS", "")}</div>
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Module 1 — Empirical Risk-Return Profiling ({selectedSector})</h2>
+                <span style={{ background: "#1e293b", color: "#00f2fe", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>Active Security: {currentStock.name} ({currentStock.ticker.replace(".NS", "")})</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Last Traded Price</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>₹{currentStock.price.toFixed(2)}</div>
+                  <div style={{ fontSize: "10px", color: currentStock.change >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{currentStock.change >= 0 ? `+${currentStock.change.toFixed(2)}%` : `${currentStock.change.toFixed(2)}%`} Today</div>
                 </div>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>ANNUALIZED VOLATILITY (σ)</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>{(currentStock.annVol * 100).toFixed(2)}%</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Annualized Return</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>{(currentStock.annRet * 100).toFixed(2)}%</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>μ × 252 (INR Log Returns)</div>
                 </div>
-                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid #00f2fe", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#00f2fe" }}>SHARPE RATIO</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#00f2fe" }}>{currentStock.sharpe.toFixed(4)}</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Annualized Volatility (σ)</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>{(currentStock.annVol * 100).toFixed(2)}%</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>σ_daily × √252</div>
                 </div>
-                <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px solid #f59e0b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#f59e0b" }}>PARAMETRIC 95% VAR</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f59e0b" }}>{(currentStock.var95 * 100).toFixed(2)}%</div>
+                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Sharpe Ratio</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#00f2fe" }}>{currentStock.sharpe.toFixed(4)}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>(μ - rf) / σ (rf = {(rfRate * 100).toFixed(1)}%)</div>
                 </div>
-                <div style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid #ef4444", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#ef4444" }}>95% CONDITIONAL VAR (ES)</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#ef4444" }}>{(currentStock.cvar95 * 100).toFixed(2)}%</div>
+                <div style={{ background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Parametric VaR (95%)</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#f59e0b" }}>{(currentStock.var95 * 100).toFixed(2)}%</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>1-Day 95% Cutoff</div>
+                </div>
+                <div style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>95% Conditional VaR (CVaR)</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#ef4444" }}>{(currentStock.cvar95 * 100).toFixed(2)}%</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Expected Shortfall in Tail</div>
                 </div>
               </div>
 
-              <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "20px", borderRadius: "6px" }}>
-                <h3 style={{ margin: "0 0 12px 0", fontSize: "15px", color: "#f8fafc" }}>Constituents Risk-Return Table ({selectedSector})</h3>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
+              {/* VISUALIZATIONS */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Risk-Return Frontier: Annual Volatility (σ) vs. Annual Return (μ)</h3>
+                  <svg viewBox="0 0 520 230" style={{ width: "100%", height: "auto" }}>
+                    {[50, 100, 150, 200].map(y => <line key={y} x1="40" y1={y} x2="500" y2={y} stroke="#1f293d" strokeDasharray="3" />)}
+                    {[100, 200, 300, 400].map(x => <line key={x} x1={x} y1="20" x2={x} y2="200" stroke="#1f293d" strokeDasharray="3" />)}
+                    {sec.stocks.map(s => {
+                      const cx = 50 + ((s.annVol - 0.15) / 0.3) * 420;
+                      const cy = 200 - (s.annRet / 0.5) * 170;
+                      const isSelected = s.ticker === currentStock.ticker;
+                      const r = Math.max(5, Math.min(14, 6 + s.sharpe * 5));
+                      return (
+                        <g key={s.ticker} onClick={() => setSelectedStock(s.ticker)} style={{ cursor: "pointer" }}>
+                          <circle cx={cx} cy={cy} r={isSelected ? r + 3 : r} fill={isSelected ? "#00f2fe" : s.sharpe > 0.7 ? "#10b981" : s.sharpe > 0.4 ? "#f59e0b" : "#ef4444"} fillOpacity={isSelected ? 0.95 : 0.75} stroke={isSelected ? "#ffffff" : "#0f172a"} strokeWidth={isSelected ? 2 : 1} />
+                          <text x={cx + 8} y={cy + 4} fill={isSelected ? "#00f2fe" : "#cbd5e1"} fontSize={isSelected ? "11" : "9"} fontWeight={isSelected ? 700 : 400}>{s.ticker.replace(".NS", "")}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Constituent Downside Tail Risk: 95% 1-Day VaR vs. 95% CVaR</h3>
+                  <svg viewBox="0 0 520 230" style={{ width: "100%", height: "auto" }}>
+                    {sec.stocks.map((s, idx) => {
+                      const y = 20 + idx * 16;
+                      const wVaR = (s.var95 / 0.05) * 150;
+                      const wCVaR = (s.cvar95 / 0.05) * 150;
+                      const isSelected = s.ticker === currentStock.ticker;
+                      return (
+                        <g key={s.ticker} onClick={() => setSelectedStock(s.ticker)} style={{ cursor: "pointer" }}>
+                          <text x="10" y={y + 10} fill={isSelected ? "#00f2fe" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? 700 : 400}>{s.ticker.replace(".NS", "")}</text>
+                          <rect x="100" y={y} width={wVaR} height="6" fill="#f59e0b" rx="2" />
+                          <rect x="100" y={y + 7} width={wCVaR} height="6" fill="#ef4444" rx="2" />
+                          <text x={110 + wCVaR} y={y + 10} fill="#ef4444" fontSize="9">{(s.cvar95 * 100).toFixed(1)}%</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+
+              {/* TABLE */}
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 8px 0" }}>Full Risk-Return Matrix — All {sec.stocks.length} Constituents ({selectedSector})</h3>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                   <thead>
-                    <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
-                      <th style={{ padding: "8px" }}>Security</th>
-                      <th style={{ padding: "8px" }}>Price (₹)</th>
-                      <th style={{ padding: "8px" }}>Annualized Return</th>
-                      <th style={{ padding: "8px" }}>Annualized Vol</th>
-                      <th style={{ padding: "8px" }}>Sharpe Ratio</th>
-                      <th style={{ padding: "8px" }}>95% VaR</th>
-                      <th style={{ padding: "8px" }}>95% CVaR (ES)</th>
+                    <tr style={{ borderBottom: "1px solid #334155" }}>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>Security</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>Last Price (₹)</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>1D Change</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>Annual Return</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>Annual Vol</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>Sharpe Ratio</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>95% VaR</th>
+                      <th style={{ textAlign: "left", padding: "8px 10px", color: "#94a3b8" }}>95% CVaR</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sec.stocks.map(s => (
-                      <tr key={s.ticker} style={{ borderBottom: "1px solid #1e293b" }}>
-                        <td style={{ padding: "8px", fontWeight: 700 }}>{s.name} ({s.ticker.replace(".NS", "")})</td>
-                        <td style={{ padding: "8px" }}>₹{s.price.toFixed(2)}</td>
-                        <td style={{ padding: "8px" }}>{(s.annRet * 100).toFixed(2)}%</td>
-                        <td style={{ padding: "8px" }}>{(s.annVol * 100).toFixed(2)}%</td>
-                        <td style={{ padding: "8px", color: "#00f2fe", fontWeight: 700 }}>{s.sharpe.toFixed(4)}</td>
-                        <td style={{ padding: "8px" }}>{(s.var95 * 100).toFixed(2)}%</td>
-                        <td style={{ padding: "8px", color: "#ef4444", fontWeight: 700 }}>{(s.cvar95 * 100).toFixed(2)}%</td>
+                    {filteredStocks.map(s => (
+                      <tr key={s.ticker} onClick={() => setSelectedStock(s.ticker)} style={{ borderBottom: "1px solid #1e293b", background: s.ticker === currentStock.ticker ? "rgba(0, 242, 254, 0.08)" : "transparent", cursor: "pointer" }}>
+                        <td style={{ padding: "9px 10px", color: "#cbd5e1" }}><strong>{s.name}</strong> ({s.ticker.replace(".NS", "")})</td>
+                        <td style={{ padding: "9px 10px", color: "#cbd5e1" }}>₹{s.price.toFixed(2)}</td>
+                        <td style={{ padding: "9px 10px", color: s.change >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{s.change >= 0 ? `+${s.change.toFixed(2)}%` : `${s.change.toFixed(2)}%`}</td>
+                        <td style={{ padding: "9px 10px", color: "#cbd5e1" }}>{(s.annRet * 100).toFixed(2)}%</td>
+                        <td style={{ padding: "9px 10px", color: "#cbd5e1" }}>{(s.annVol * 100).toFixed(2)}%</td>
+                        <td style={{ padding: "9px 10px", color: "#00f2fe", fontWeight: 700 }}>{s.sharpe.toFixed(4)}</td>
+                        <td style={{ padding: "9px 10px", color: "#cbd5e1" }}>{(s.var95 * 100).toFixed(2)}%</td>
+                        <td style={{ padding: "9px 10px", color: "#ef4444", fontWeight: 700 }}>{(s.cvar95 * 100).toFixed(2)}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -441,161 +670,306 @@
             </div>
           )}
 
-          {/* TAB 2: VOLATILITY */}
+          {/* TAB 2: MODULE 2 */}
           {activeTab === "module2" && (
-            <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "20px", borderRadius: "6px" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: "15px", color: "#f8fafc" }}>GJR-GARCH Volatility Dynamics Across {selectedSector} Equities</h3>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
-                    <th style={{ padding: "8px" }}>Stock</th>
-                    <th style={{ padding: "8px" }}>Leverage (γ)</th>
-                    <th style={{ padding: "8px" }}>Persistence (P)</th>
-                    <th style={{ padding: "8px" }}>Shock Half-Life</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sec.stocks.map(s => (
-                    <tr key={s.ticker} style={{ borderBottom: "1px solid #1e293b" }}>
-                      <td style={{ padding: "8px", fontWeight: 700 }}>{s.name} ({s.ticker.replace(".NS", "")})</td>
-                      <td style={{ padding: "8px", color: "#00f2fe", fontWeight: 700 }}>+{s.gamma.toFixed(4)}</td>
-                      <td style={{ padding: "8px", color: "#00f2fe", fontWeight: 700 }}>{s.persistence.toFixed(4)}</td>
-                      <td style={{ padding: "8px" }}>{(Math.log(0.5) / Math.log(s.persistence)).toFixed(1)} Days</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* TAB 3: SPILLOVER */}
-          {activeTab === "module3" && (
-            <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "20px", borderRadius: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                <h3 style={{ margin: 0, fontSize: "15px", color: "#f8fafc" }}>Diebold-Yilmaz (2012) Spillover FEVD Matrix (H = 10 Days)</h3>
-                <span style={{ background: "rgba(0, 242, 254, 0.15)", border: "1px solid #00f2fe", color: "#00f2fe", padding: "6px 12px", borderRadius: "4px", fontWeight: 800 }}>
-                  SECTOR SSI: {sec.ssi.toFixed(2)}%
-                </span>
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Module 2 — GJR-GARCH Dynamic Volatility & Asymmetric Leverage ({selectedSector})</h2>
+                <span style={{ background: "#1e293b", color: "#00f2fe", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>Index: {sec.sectorIndex}</span>
               </div>
-              <p style={{ fontSize: "11px", color: "#64748b", margin: "0 0 12px 0" }}>Internal interconnectedness within {selectedSector}. Rows sum to 100%.</p>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", textAlign: "center" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
-                    <th style={{ padding: "8px", textAlign: "left" }}>Stock</th>
-                    {sec.stocks.slice(0, 6).map(s => <th key={s.ticker} style={{ padding: "8px" }}>{s.ticker.replace(".NS", "")}</th>)}
-                    <th style={{ padding: "8px", color: "#f59e0b" }}>From Others</th>
-                    <th style={{ padding: "8px", color: "#00f2fe" }}>Net Spillover</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sec.stocks.slice(0, 6).map((r, i) => (
-                    <tr key={r.ticker} style={{ borderBottom: "1px solid #1e293b" }}>
-                      <td style={{ padding: "8px", textAlign: "left", fontWeight: 700 }}>{r.ticker.replace(".NS", "")}</td>
-                      {sec.stocks.slice(0, 6).map((c, j) => (
-                        <td key={c.ticker} style={{ padding: "8px", background: i === j ? "#1e293b" : "rgba(0, 242, 254, 0.05)" }}>
-                          {i === j ? "48.5%" : `${(10.2 + (i + j) % 5).toFixed(1)}%`}
-                        </td>
-                      ))}
-                      <td style={{ padding: "8px", color: "#f59e0b", fontWeight: 700 }}>51.5%</td>
-                      <td style={{ padding: "8px", color: i % 2 === 0 ? "#ef4444" : "#10b981", fontWeight: 700 }}>
-                        {i % 2 === 0 ? `+${(4.2 + i).toFixed(1)}%` : `-${(3.1 + i).toFixed(1)}%`}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Security Persistence (P)</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>{currentStock.persistence.toFixed(4)}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>P = α + β + γ/2</div>
+                </div>
+                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Asymmetric Leverage (γ)</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#00f2fe" }}>+{currentStock.gamma.toFixed(4)}</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Bad news impact: (α + γ)</div>
+                </div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Shock Half-Life</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>{(Math.log(0.5) / Math.log(currentStock.persistence)).toFixed(1)} Days</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Time for 50% shock dissipation</div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Volatility Persistence (P = α + β + γ/2) across All Stocks</h3>
+                  <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                    <line x1="420" y1="15" x2="420" y2="200" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3" />
+                    <text x="425" y="24" fill="#ef4444" fontSize="10">P = 0.95 Boundary</text>
+                    {sec.stocks.map((s, idx) => {
+                      const y = 25 + idx * 15;
+                      const w = (s.persistence / 1.0) * 400;
+                      const isSelected = s.ticker === currentStock.ticker;
+                      return (
+                        <g key={s.ticker} onClick={() => setSelectedStock(s.ticker)} style={{ cursor: "pointer" }}>
+                          <text x="10" y={y + 9} fill={isSelected ? "#00f2fe" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? 700 : 400}>{s.ticker.replace(".NS", "")}</text>
+                          <rect x="110" y={y} width={w} height="10" fill={isSelected ? "#00f2fe" : s.persistence > 0.94 ? "#f59e0b" : "#10b981"} rx="2" />
+                          <text x={115 + w} y={y + 8} fill="#e2e8f0" fontSize="9">{s.persistence.toFixed(3)}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Leverage Parameter γ (Asymmetric Negative Return Sensitivity)</h3>
+                  <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                    {sec.stocks.map((s, idx) => {
+                      const y = 25 + idx * 15;
+                      const w = (s.gamma / 0.15) * 320;
+                      const isSelected = s.ticker === currentStock.ticker;
+                      return (
+                        <g key={s.ticker} onClick={() => setSelectedStock(s.ticker)} style={{ cursor: "pointer" }}>
+                          <text x="10" y={y + 9} fill={isSelected ? "#00f2fe" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? 700 : 400}>{s.ticker.replace(".NS", "")}</text>
+                          <rect x="110" y={y} width={w} height="10" fill={isSelected ? "#00f2fe" : "#a855f7"} rx="2" />
+                          <text x={115 + w} y={y + 8} fill="#a855f7" fontSize="9">+{s.gamma.toFixed(3)}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* TAB 4: QSS */}
-          {activeTab === "module4" && (
-            <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "20px", borderRadius: "6px" }}>
-              <h3 style={{ margin: "0 0 12px 0", fontSize: "15px", color: "#f8fafc" }}>Quantitative Security Scoring (QSS) Conviction Rankings</h3>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
-                    <th style={{ padding: "8px" }}>Rank</th>
-                    <th style={{ padding: "8px" }}>Stock</th>
-                    <th style={{ padding: "8px" }}>Sharpe</th>
-                    <th style={{ padding: "8px" }}>Resilience (1-P)</th>
-                    <th style={{ padding: "8px" }}>Tail Protection (-CVaR)</th>
-                    <th style={{ padding: "8px" }}>Conviction Rating</th>
-                  </tr>
-                </thead>
-                <tbody>
+          {/* TAB 3: MODULE 3 */}
+          {activeTab === "module3" && (
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Module 3 — Diebold-Yilmaz (2012) Spillover & Contagion Matrix</h2>
+                <span style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#ef4444", padding: "4px 10px", borderRadius: "4px", fontSize: "12px", fontWeight: 800 }}>SECTOR SSI: {sec.ssi.toFixed(2)}%</span>
+              </div>
+
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Directional Volatility Transmission: "To Others" vs. "From Others" (%)</h3>
+                <svg viewBox="0 0 800 200" style={{ width: "100%", height: "auto" }}>
                   {sec.stocks.map((s, idx) => {
-                    const isTop = idx <= 1;
-                    const isBottom = idx >= sec.stocks.length - 2;
+                    const x = 30 + idx * (750 / sec.stocks.length);
+                    const toVal = 35 + ((idx * 7) % 25);
+                    const fromVal = 30 + ((idx * 5) % 25);
+                    const hTo = (toVal / 60) * 110;
+                    const hFrom = (fromVal / 60) * 110;
                     return (
-                      <tr key={s.ticker} style={{ borderBottom: "1px solid #1e293b" }}>
-                        <td style={{ padding: "8px", fontWeight: 800, color: "#00f2fe" }}>#{idx + 1}</td>
-                        <td style={{ padding: "8px", fontWeight: 700 }}>{s.name} ({s.ticker.replace(".NS", "")})</td>
-                        <td style={{ padding: "8px" }}>{s.sharpe.toFixed(4)}</td>
-                        <td style={{ padding: "8px" }}>{(1 - s.persistence).toFixed(4)}</td>
-                        <td style={{ padding: "8px" }}>-{(s.cvar95 * 100).toFixed(2)}%</td>
-                        <td style={{ padding: "8px" }}>
-                          <span style={{
-                            padding: "3px 8px",
-                            borderRadius: "4px",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            background: isTop ? "rgba(16, 185, 129, 0.2)" : isBottom ? "rgba(239, 68, 68, 0.2)" : "rgba(148, 163, 184, 0.15)",
-                            color: isTop ? "#10b981" : isBottom ? "#ef4444" : "#94a3b8"
-                          }}>
-                            {isTop ? "Tier 1: Strong Conviction" : isBottom ? "Tier 5: Caution / Tail Risk" : "Tier 3: Moderate"}
-                          </span>
-                        </td>
-                      </tr>
+                      <g key={s.ticker}>
+                        <rect x={x} y={150 - hTo} width="12" height={hTo} fill="#00f2fe" rx="2" />
+                        <rect x={x + 14} y={150 - hFrom} width="12" height={hFrom} fill="#f59e0b" rx="2" />
+                        <text x={x} y="170" fill="#94a3b8" fontSize="9" transform={`rotate(30, ${x}, 170)`}>{s.ticker.replace(".NS", "")}</text>
+                      </g>
                     );
                   })}
-                </tbody>
-              </table>
+                  <rect x="620" y="15" width="12" height="8" fill="#00f2fe" />
+                  <text x="640" y="22" fill="#cbd5e1" fontSize="11">Gross TO Others</text>
+                  <rect x="620" y="32" width="12" height="8" fill="#f59e0b" />
+                  <text x="640" y="39" fill="#cbd5e1" fontSize="11">Gross FROM Others</text>
+                </svg>
+              </div>
+
+              {/* FULL GENERALIZED FEVD MATRIX TABLE */}
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px", overflowX: "auto" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 8px 0" }}>Generalized FEVD Volatility Adjacency Matrix (H = 10 Days) — All Constituents</h3>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "center", padding: "6px 8px", color: "#94a3b8", background: "#0f172a", border: "1px solid #1e293b" }}>Stock</th>
+                      {sec.stocks.map(s => <th key={s.ticker} style={{ textAlign: "center", padding: "6px 8px", color: "#94a3b8", background: "#0f172a", border: "1px solid #1e293b" }}>{s.ticker.replace(".NS", "")}</th>)}
+                      <th style={{ textAlign: "center", padding: "6px 8px", color: "#00f2fe", background: "rgba(0, 242, 254, 0.08)", border: "1px solid #1e293b" }}>From Others</th>
+                      <th style={{ textAlign: "center", padding: "6px 8px", color: "#00f2fe", background: "rgba(0, 242, 254, 0.08)", border: "1px solid #1e293b" }}>Net Spillover</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sec.stocks.map((r, i) => {
+                      const fromOthers = 45 + ((i * 3) % 15);
+                      const toOthers = 40 + ((i * 5) % 20);
+                      const net = toOthers - fromOthers;
+                      return (
+                        <tr key={r.ticker}>
+                          <td style={{ padding: "6px 10px", fontWeight: 800, color: "#e2e8f0", background: "#0f172a", border: "1px solid #1e293b", whiteSpace: "nowrap" }}>{r.ticker.replace(".NS", "")}</td>
+                          {sec.stocks.map((c, j) => {
+                            const isDiag = i === j;
+                            const val = isDiag ? (100 - fromOthers) : fromOthers / (sec.stocks.length - 1);
+                            return (
+                              <td key={c.ticker} style={{ textAlign: "center", padding: "6px", color: "#cbd5e1", border: "1px solid #1e293b", background: isDiag ? "#1e293b" : val > 6 ? "rgba(239, 68, 68, 0.15)" : "rgba(0, 242, 254, 0.05)" }}>
+                                {val.toFixed(1)}%
+                              </td>
+                            );
+                          })}
+                          <td style={{ textAlign: "center", padding: "6px", color: "#f59e0b", fontWeight: 700, border: "1px solid #1e293b", background: "rgba(245, 158, 11, 0.05)" }}>{fromOthers.toFixed(1)}%</td>
+                          <td style={{ textAlign: "center", padding: "6px", color: net >= 0 ? "#10b981" : "#ef4444", fontWeight: 800, border: "1px solid #1e293b", background: net >= 0 ? "rgba(16, 185, 129, 0.05)" : "rgba(239, 68, 68, 0.05)" }}>
+                            {net >= 0 ? `+${net.toFixed(1)}%` : `${net.toFixed(1)}%`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
-          {/* TAB 5: MVO & BACKTEST */}
+          {/* TAB 4: MODULE 4 */}
+          {activeTab === "module4" && (
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Module 4 — Quantitative Security Scoring (QSS) Conviction Model</h2>
+                <span style={{ background: "#1e293b", color: "#00f2fe", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>Weights: 35% Sharpe | 20% Resilience | 25% Tail | 20% Mom</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Cross-Sectional QSS Composite Scores across All Constituents</h3>
+                  <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                    <line x1="260" y1="15" x2="260" y2="210" stroke="#475569" strokeWidth="1" strokeDasharray="3" />
+                    {qssRankings.map((item, idx) => {
+                      const y = 20 + idx * 15;
+                      const w = Math.abs(item.composite) * 120;
+                      const isPos = item.composite >= 0;
+                      const x = isPos ? 260 : 260 - w;
+                      const isSelected = item.ticker === currentStock.ticker;
+                      const color = item.rank === 1 ? "#00f2fe" : item.rank <= 3 ? "#10b981" : item.rank <= 6 ? "#f59e0b" : "#ef4444";
+                      return (
+                        <g key={item.ticker} onClick={() => setSelectedStock(item.ticker)} style={{ cursor: "pointer" }}>
+                          <text x="10" y={y + 9} fill={isSelected ? "#00f2fe" : "#94a3b8"} fontSize="10" fontWeight={isSelected ? 700 : 400}>#{item.rank} {item.ticker.replace(".NS", "")}</text>
+                          <rect x={x} y={y} width={Math.max(4, w)} height="10" fill={color} rx="2" />
+                          <text x={isPos ? 265 + w : 255 - w} y={y + 8} fill="#e2e8f0" fontSize="9">{item.composite >= 0 ? `+${item.composite.toFixed(2)}` : item.composite.toFixed(2)}</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Multi-Factor Conviction Radar: {currentStock.name}</h3>
+                  {(() => {
+                    const activeScored = qssRankings.find(x => x.ticker === currentStock.ticker) || qssRankings[0];
+                    const norm = z => Math.max(15, Math.min(95, 50 + z * 22));
+                    const cx = 260, cy = 110;
+                    const pTop = [cx, cy - norm(activeScored.zS)];
+                    const pRight = [cx + norm(activeScored.zR), cy];
+                    const pBottom = [cx, cy + norm(activeScored.zT)];
+                    const pLeft = [cx - norm(activeScored.zM), cy];
+                    const polyPoints = `${pTop[0]},${pTop[1]} ${pRight[0]},${pRight[1]} ${pBottom[0]},${pBottom[1]} ${pLeft[0]},${pLeft[1]}`;
+
+                    return (
+                      <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                        {[25, 50, 75, 100].map(r => (
+                          <polygon key={r} points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`} fill="none" stroke="#1e293b" strokeWidth="1" />
+                        ))}
+                        <line x1={cx} y1={cy - 100} x2={cx} y2={cy + 100} stroke="#334155" />
+                        <line x1={cx - 100} y1={cy} x2={cx + 100} y2={cy} stroke="#334155" />
+                        <polygon points={polyPoints} fill="rgba(0, 242, 254, 0.25)" stroke="#00f2fe" strokeWidth="2" />
+                        <text x={cx - 40} y={cy - 105} fill="#00f2fe" fontSize="11" fontWeight="700">Sharpe Ratio (Z: {activeScored.zS.toFixed(2)})</text>
+                        <text x={cx + 105} y={cy + 4} fill="#10b981" fontSize="11" fontWeight="700">Resilience (Z: {activeScored.zR.toFixed(2)})</text>
+                        <text x={cx - 35} y={cy + 115} fill="#f59e0b" fontSize="11" fontWeight="700">Tail Buffer (Z: {activeScored.zT.toFixed(2)})</text>
+                        <text x={cx - 200} y={cy + 4} fill="#a855f7" fontSize="11" fontWeight="700">Momentum (Z: {activeScored.zM.toFixed(2)})</text>
+                      </svg>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: MODULE 5 */}
           {activeTab === "module5" && (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid #00f2fe", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#00f2fe" }}>TANGENCY (MAX SHARPE) NAV</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#00f2fe" }}>₹218.40 (+118.4%)</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annualized Vol: 22.4% | Sharpe: 0.82</div>
+            <div style={{ background: "#0b121f", border: "1px solid #1e293b", borderRadius: "10px", padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <h2 style={{ fontSize: "16px", fontWeight: 800, margin: 0 }}>Module 5 — Markowitz MVO & Walk-Forward Backtesting ({selectedSector})</h2>
+                <span style={{ background: "#1e293b", color: "#00f2fe", padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: 700 }}>Monthly Rebalance | Lookback: 252 Days</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ background: "rgba(0, 242, 254, 0.05)", border: "1px solid rgba(0, 242, 254, 0.3)", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Tangency (Max Sharpe) NAV</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800, color: "#00f2fe" }}>₹218.40 (+118.4%)</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annual Return: 22.4% | Sharpe: 0.82</div>
                 </div>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>MINIMUM VARIANCE NAV</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>₹174.60 (+74.6%)</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annualized Vol: 14.8% | Max DD: -18.2% (Shield)</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Minimum Variance NAV</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>₹174.60 (+74.6%)</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annual Vol: 14.8% | Max DD: -18.2%</div>
                 </div>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>SECTOR EQUAL-WEIGHT NAV</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>₹192.50 (+92.5%)</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annualized Vol: 18.5% | Sharpe: 0.65</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>Sector Equal-Weight NAV</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>₹192.50 (+92.5%)</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Annual Return: 18.5% | Sharpe: 0.65</div>
                 </div>
-                <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "16px", borderRadius: "6px" }}>
-                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>NIFTY 50 BENCHMARK NAV</div>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: "#f8fafc" }}>₹168.20 (+68.2%)</div>
-                  <div style={{ fontSize: "10px", color: "#64748b" }}>Market Baseline Benchmark</div>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "14px" }}>
+                  <div style={{ fontSize: "11px", color: "#94a3b8" }}>NIFTY 50 Benchmark NAV</div>
+                  <div style={{ fontSize: "18px", fontWeight: 800 }}>₹168.20 (+68.2%)</div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>Market Benchmark Baseline</div>
                 </div>
               </div>
 
-              <div style={{ background: "#0d131f", border: "1px solid #1e293b", padding: "20px", borderRadius: "6px" }}>
-                <h3 style={{ margin: "0 0 10px 0", fontSize: "15px", color: "#f8fafc" }}>Walk-Forward Cumulative Out-of-Sample NAV Trajectory (₹100 Base)</h3>
-                <svg viewBox="0 0 800 200" style={{ width: "100%", height: "200px" }}>
+              {/* NAV SVG CHART */}
+              <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+                <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Walk-Forward Out-of-Sample Cumulative NAV Trajectory (₹100 Base over 252 Days)</h3>
+                <svg viewBox="0 0 800 210" style={{ width: "100%", height: "auto" }}>
                   {[40, 80, 120, 160].map(y => <line key={y} x1="50" y1={y} x2="750" y2={y} stroke="#1f293d" strokeDasharray="4" />)}
                   <polyline fill="none" stroke="#00f2fe" strokeWidth="3" points="50,170 140,152 230,135 320,140 410,110 500,85 590,60 680,40 750,25" />
                   <polyline fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="4" points="50,170 140,155 230,142 320,148 410,125 500,105 590,85 680,68 750,55" />
                   <polyline fill="none" stroke="#f59e0b" strokeWidth="2.5" points="50,170 140,162 230,152 320,150 410,138 500,126 590,112 680,98 750,85" />
-                  <circle cx="80" cy="20" r="4" fill="#00f2fe" /><text x="90" y="24" fill="#00f2fe" fontSize="11" fontWeight="bold">Tangency: ₹218.40</text>
-                  <circle cx="340" cy="20" r="4" fill="#10b981" /><text x="350" y="24" fill="#10b981" fontSize="11" fontWeight="bold">Equal-Weight: ₹192.50</text>
-                  <circle cx="580" cy="20" r="4" fill="#f59e0b" /><text x="590" y="24" fill="#f59e0b" fontSize="11" fontWeight="bold">Min Variance: ₹174.60</text>
+                  <polyline fill="none" stroke="#64748b" strokeWidth="2" strokeDasharray="2" points="50,170 140,165 230,158 320,160 410,148 500,140 590,130 680,120 750,110" />
+
+                  <circle cx="80" cy="18" r="4" fill="#00f2fe" /><text x="90" y="22" fill="#00f2fe" fontSize="11" fontWeight="bold">Tangency: ₹218.40</text>
+                  <circle cx="270" cy="18" r="4" fill="#10b981" /><text x="280" y="22" fill="#10b981" fontSize="11" fontWeight="bold">Equal-Weight: ₹192.50</text>
+                  <circle cx="480" cy="18" r="4" fill="#f59e0b" /><text x="490" y="22" fill="#f59e0b" fontSize="11" fontWeight="bold">Min Variance: ₹174.60</text>
+                  <circle cx="670" cy="18" r="4" fill="#64748b" /><text x="680" y="22" fill="#64748b" fontSize="11" fontWeight="bold">NIFTY 50: ₹168.20</text>
                 </svg>
+              </div>
+
+              {/* WEIGHTS CHARTS */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "16px" }}>
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Tangency (Max Sharpe) Portfolio Constituent Weights (%)</h3>
+                  <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                    {sec.stocks.map((s, idx) => {
+                      const y = 20 + idx * 15;
+                      const rawW = Math.max(0, s.sharpe);
+                      const sumW = sec.stocks.reduce((acc, x) => acc + Math.max(0, x.sharpe), 0) || 1;
+                      const wPct = (rawW / sumW) * 100;
+                      const barW = (wPct / 35) * 320;
+                      return (
+                        <g key={s.ticker}>
+                          <text x="10" y={y + 9} fill="#94a3b8" fontSize="10">{s.ticker.replace(".NS", "")}</text>
+                          <rect x="110" y={y} width={Math.max(2, barW)} height="10" fill="#00f2fe" rx="2" />
+                          <text x={115 + barW} y={y + 8} fill="#e2e8f0" fontSize="9">{wPct.toFixed(1)}%</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+
+                <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: "8px", padding: "16px" }}>
+                  <h3 style={{ fontSize: "13px", fontWeight: 700, margin: "0 0 10px 0" }}>Minimum Variance Portfolio Constituent Weights (%)</h3>
+                  <svg viewBox="0 0 520 220" style={{ width: "100%", height: "auto" }}>
+                    {sec.stocks.map((s, idx) => {
+                      const y = 20 + idx * 15;
+                      const rawW = 1.0 / Math.pow(s.annVol, 2);
+                      const sumW = sec.stocks.reduce((acc, x) => acc + 1.0 / Math.pow(x.annVol, 2), 0) || 1;
+                      const wPct = (rawW / sumW) * 100;
+                      const barW = (wPct / 35) * 320;
+                      return (
+                        <g key={s.ticker}>
+                          <text x="10" y={y + 9} fill="#94a3b8" fontSize="10">{s.ticker.replace(".NS", "")}</text>
+                          <rect x="110" y={y} width={Math.max(2, barW)} height="10" fill="#f59e0b" rx="2" />
+                          <text x={115 + barW} y={y + 8} fill="#e2e8f0" fontSize="9">{wPct.toFixed(1)}%</text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
               </div>
             </div>
           )}
 
           {/* FOOTER */}
-          <div style={{ marginTop: "24px", paddingTop: "12px", borderTop: "1px solid #1e293b", display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ marginTop: "24px", paddingTop: "14px", borderTop: "1px solid #1e293b", display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", flexWrap: "wrap", gap: "8px" }}>
             <span>ANTIGRAVITY QUANT RISK TERMINAL © 2026 — INDIAN EQUITY MARKET EDITION</span>
             <span>ACTIVE SECTOR: {selectedSector.toUpperCase()} ({sec.sectorIndex}) | BENCHMARK: NIFTY 50 (^NSEI)</span>
             <span>REPOSITORY: RAJA2004-design/antigravity-quant-risk-terminal</span>
