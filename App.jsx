@@ -665,7 +665,7 @@ export default function App() {
                 <h3 style={styles.panelTitle}>Sector Systemic Spillover Index (SSI %) Contagion Clustering</h3>
                 <svg viewBox="0 0 520 190" style={styles.svgFull}>
                   <line x1="280" y1="10" x2="280" y2="170" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="3" />
-                  <text x="285" y="18" fill="#ef4444" fontSize="10">High Spillover (>55%)</text>
+                  <text x="285" y="18" fill="#ef4444" fontSize="10">High Spillover (&gt;55%)</text>
                   {Object.keys(sectorsConfig).map((sKey, i) => {
                     const ssi = sectorsConfig[sKey].ssi;
                     const y = 30 + i * 17;
