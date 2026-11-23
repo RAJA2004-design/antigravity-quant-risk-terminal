@@ -121,6 +121,38 @@ class TestQuantEngine(unittest.TestCase):
         self.assertIn("systemic_spillover_index", assessment["network_connectedness"])
         self.assertIn("tier1_top_conviction", assessment["conviction_stock_picks"])
 
+    def test_fallbacks_and_resilience(self):
+        """Test econometric model fallbacks for non-standard environments and short data series"""
+        import quant_engine as qe
+        from unittest.mock import patch
+
+        # 1. Test Pure NumPy GARCH fallback
+        r_series = self.returns["ASSET_A"]
+        numpy_garch = qe._fit_numpy_garch11(r_series, "GJR-GARCH")
+        self.assertIn("conditional_volatility", numpy_garch)
+        self.assertIn("1-Day Ahead (Ann Vol)", numpy_garch["forecast_horizons"])
+        self.assertGreater(numpy_garch["persistence"], 0.8)
+
+        # 2. Test Pure NumPy VAR fallback in compute_fevd_spillover
+        with patch("quant_engine.VAR", None):
+            spill_fallback = qe.compute_fevd_spillover(self.returns, max_lags=1, forecast_horizon=10)
+            self.assertIn("fevd_matrix", spill_fallback)
+            self.assertIn("ssi", spill_fallback)
+            self.assertGreaterEqual(spill_fallback["ssi"], 0.0)
+
+        # 3. Test Adaptive Walk-Forward Backtesting with Short History (N=80)
+        short_returns = self.returns.iloc[:80]
+        short_bt = qe.walk_forward_backtest(short_returns, lookback=252, rebalance_freq=21, rf=0.065)
+        self.assertIn("nav", short_bt)
+        self.assertEqual(len(short_bt["nav"]), len(short_bt["returns"]))
+
+        # 4. Test MVO Max Sharpe with Negative Excess Returns
+        neg_mu = np.array([-0.10, -0.15, -0.08])
+        neg_cov = np.eye(3) * 0.04
+        w_safe = qe.optimize_portfolio(neg_mu, neg_cov, objective="max_sharpe", rf=0.065)
+        self.assertAlmostEqual(np.sum(w_safe), 1.0, places=4)
+        self.assertTrue((w_safe >= 0.0).all())
+
 
 if __name__ == "__main__":
     unittest.main()
